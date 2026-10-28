@@ -9,7 +9,7 @@ Tema: verde escuro e dourado, tirados da logomarca.
 | `/painel` | Painel da loja: pedidos online, vitrine, kits, resumo, configurações | sim |
 | `/admin` | Sistema completo: PDV, produtos, estoque, caixa, clientes, despesas, relatórios, marketing | sim |
 
-Acesso do administrador: login `agropet`, senha `Agropet2026` (criado pelo SQL abaixo; troque depois).
+Acesso do administrador: login `01ST`, senha `Agro1234` (criado pelo SQL abaixo; troque depois).
 
 ---
 
@@ -40,7 +40,7 @@ Acesso do administrador: login `agropet`, senha `Agropet2026` (criado pelo SQL a
 
 ### 3. Primeiro uso
 
-1. Entre em `/admin` com `agropet` / `Agropet2026`.
+1. Entre em `/admin` com `01ST` / `Agro1234`.
 2. **Configurações → Loja online**: WhatsApp da loja (sem ele o botão de WhatsApp não aparece para o cliente), endereço, frete.
 3. **Produtos**: cadastre os produtos e marque o que aparece no catálogo (**Loja online** no painel).
 4. Mande o link da loja para os clientes.

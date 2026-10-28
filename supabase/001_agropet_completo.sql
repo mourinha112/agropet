@@ -333,12 +333,12 @@ end $$;
 
 -- ---------------------------------------------------------------------
 -- 13. Usuário administrador
---   login: agropet   senha: Agropet2026   (sha256 da senha em hex)
+--   login: 01ST   senha: Agro1234   (sha256 da senha em hex)
 -- Para trocar a senha depois, gere o sha256 da nova senha e atualize
 -- senha_hash, ou crie outro usuário pela tela de login.
 -- ---------------------------------------------------------------------
 insert into public.users (nome, login, senha_hash, role)
-values ('Agropet', 'agropet', '6fbac970d24a42939526d32a787bd3fb328774fb36d802645f197454d6194695', 'admin')
+values ('Agropet', '01ST', 'cfbdfd2e826722ec03b3df10220dbb8bfbf2b43c10a6ce0b066306b9bde79db3', 'admin')
 on conflict (login) do update
   set senha_hash = excluded.senha_hash,
       role       = 'admin';
