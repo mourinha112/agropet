@@ -244,7 +244,7 @@ html, body, #root {
 .pdv-left-area { flex: 1; display: flex; min-width: 0; }
 
 /* Brand area com logo */
-.pdv-brand-area { flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 20px 0 0 20px; overflow: hidden; background: var(--tr-preto); }
+.pdv-brand-area { flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 20px 0 0 20px; overflow: hidden; background: #0B1806; /* verde escuro do fundo da logo, so aqui */ }
 .pdv-brand-logo { max-width: 80%; max-height: 80%; object-fit: contain; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.2)); }
 
 /* === HISTORICO === */
