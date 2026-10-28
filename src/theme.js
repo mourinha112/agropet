@@ -1,15 +1,15 @@
 import { createTheme } from '@mui/material/styles';
 
-// Paleta Agropet: fundo verde escuro, dourado como destaque.
-const PRETO = '#061009';
-const SUPERFICIE = '#0F2117';
-const SUPERFICIE_2 = '#15291E';
-const BORDA = '#1F3A2B';
+// Paleta Agropet: fundo verde das folhas, dourado como destaque.
+const PRETO = '#4F8A10';
+const SUPERFICIE = '#5A9A18';
+const SUPERFICIE_2 = '#67A826';
+const BORDA = '#7FBF3A';
 const TEXTO = '#F5F5F5';
-const TEXTO_SUAVE = '#A3A3A3';
-const DOURADO = '#D9A521';
-const DOURADO_ESCURO = '#A87A12';
-const DOURADO_CLARO = '#F2CE5C';
+const TEXTO_SUAVE = '#E6F4D6';
+const DOURADO = '#F5C842';
+const DOURADO_ESCURO = '#C9981E';
+const DOURADO_CLARO = '#FFE285';
 const TEXTO_NO_DOURADO = '#0B1A10';
 
 const theme = createTheme({

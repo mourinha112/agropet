@@ -855,7 +855,7 @@ export default function Sales() {
                 <img src="/logo.png" alt="Logo" className="receipt-logo" style={{ maxWidth: '120px', margin: '0 auto 8px', display: 'block' }} />
                 <div className="line"></div>
               </div>
-              <div className="center" style={{ fontSize: '11px', color: '#A3A3A3' }}>CUPOM NAO FISCAL</div>
+              <div className="center" style={{ fontSize: '11px', color: '#E6F4D6' }}>CUPOM NAO FISCAL</div>
               <div className="line"></div>
               <div className="row"><span>Venda #{showReceipt.id}</span><span>{showReceipt.date.toLocaleDateString('pt-BR')}</span></div>
               <div className="row"><span>Hora: {showReceipt.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span><span>Cliente: {showReceipt.cliente}</span></div>
@@ -867,7 +867,7 @@ export default function Sales() {
               <div className="line"></div>
               <div className="row"><span>Subtotal</span><span>R$ {showReceipt.subtotal.toFixed(2)}</span></div>
               {showReceipt.desconto > 0 && (
-                <div className="row" style={{ color: '#D9A521' }}><span>Desconto</span><span>- R$ {showReceipt.desconto.toFixed(2)}</span></div>
+                <div className="row" style={{ color: '#F5C842' }}><span>Desconto</span><span>- R$ {showReceipt.desconto.toFixed(2)}</span></div>
               )}
               <div className="line"></div>
               <div className="row big"><span>TOTAL</span><span>R$ {showReceipt.total.toFixed(2)}</span></div>
@@ -880,7 +880,7 @@ export default function Sales() {
                 </>
               )}
               <div className="line"></div>
-              <div className="center" style={{ fontSize: '11px', color: '#A3A3A3', marginTop: '8px' }}>Obrigado pela preferencia!<br />Volte sempre!</div>
+              <div className="center" style={{ fontSize: '11px', color: '#E6F4D6', marginTop: '8px' }}>Obrigado pela preferencia!<br />Volte sempre!</div>
             </div>
           </div>
         </div>

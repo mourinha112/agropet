@@ -104,7 +104,7 @@ const Ico = {
       alt="" aria-hidden="true" draggable="false"
       style={{ display: 'block', objectFit: 'contain' }} />
   ),
-  Saco: ({ c1 = '#24422D', c2 = '#D9A521', w = 38, h = 49 }) => (
+  Saco: ({ c1 = '#6EAE2E', c2 = '#F5C842', w = 38, h = 49 }) => (
     <svg width={w} height={h} viewBox="0 0 60 76" aria-hidden="true">
       <path d="M11 4h38l-4 7H15z" fill={c2} />
       <path d="M8 11h44v58a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5z" fill={c1} />
@@ -117,9 +117,9 @@ const Ico = {
   ),
   Balde: ({ w = 30, h = 38 }) => (
     <svg width={w} height={h} viewBox="0 0 24 30" aria-hidden="true">
-      <path d="M4 9h16l1.6 17.5a2 2 0 0 1-2 2.2H4.4a2 2 0 0 1-2-2.2z" fill="#24422D" />
-      <path d="M8 9V6.5a4 4 0 0 1 8 0V9" fill="none" stroke="#D9A521" strokeWidth="2" />
-      <path d="M8.5 17h7M12 13.5v7" stroke="#D9A521" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M4 9h16l1.6 17.5a2 2 0 0 1-2 2.2H4.4a2 2 0 0 1-2-2.2z" fill="#6EAE2E" />
+      <path d="M8 9V6.5a4 4 0 0 1 8 0V9" fill="none" stroke="#F5C842" strokeWidth="2" />
+      <path d="M8.5 17h7M12 13.5v7" stroke="#F5C842" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   ),
   Carrinho: ({ c = '#fff', s = 22 }) => (
@@ -146,13 +146,13 @@ const Ico = {
   Voltar: ({ c = '#F5F5F5', s = 21 }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
   ),
-  Seta: ({ c = '#D9A521', s = 20 }) => (
+  Seta: ({ c = '#F5C842', s = 20 }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
   ),
   Mais: ({ c = '#0B1A10', s = 22 }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" stroke={c} strokeWidth="3.2" strokeLinecap="round" fill="none" aria-hidden="true"><path d="M6 12h12M12 6v12" /></svg>
   ),
-  Menos: ({ c = '#D9A521', s = 22 }) => (
+  Menos: ({ c = '#F5C842', s = 22 }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" stroke={c} strokeWidth="3.2" strokeLinecap="round" fill="none" aria-hidden="true"><path d="M6 12h12" /></svg>
   ),
   Check: ({ c = '#3DDC84', s = 22 }) => (
@@ -161,10 +161,10 @@ const Ico = {
   Repetir: ({ c = '#0B1A10', s = 24 }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 1 2.6 5.9" /><path d="M4 19v-5h5" /></svg>
   ),
-  Pino: ({ c = '#D9A521', s = 18 }) => (
+  Pino: ({ c = '#F5C842', s = 18 }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z" /><circle cx="12" cy="10" r="2.4" /></svg>
   ),
-  Relogio: ({ c = '#D9A521', s = 20 }) => (
+  Relogio: ({ c = '#F5C842', s = 20 }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
   ),
   Caminhao: ({ s = 26 }) => (
@@ -197,11 +197,11 @@ function BarraProgresso({ ativa }) {
 }
 
 const ROTULO_STATUS = {
-  novo: { texto: 'Aguardando a loja', cor: '#D9A521', fundo: 'rgba(217,165,33,0.14)' },
+  novo: { texto: 'Aguardando a loja', cor: '#F5C842', fundo: 'rgba(245,200,66,0.14)' },
   confirmado: { texto: 'Confirmado', cor: '#3DDC84', fundo: 'rgba(61,220,132,0.14)' },
-  separando: { texto: 'Separando', cor: '#D9A521', fundo: 'rgba(217,165,33,0.14)' },
+  separando: { texto: 'Separando', cor: '#F5C842', fundo: 'rgba(245,200,66,0.14)' },
   pronto: { texto: 'Pronto', cor: '#5AA9FF', fundo: 'rgba(90,169,255,0.14)' },
-  entregue: { texto: 'Entregue', cor: '#A3A3A3', fundo: 'rgba(163,163,163,0.14)' },
+  entregue: { texto: 'Entregue', cor: '#E6F4D6', fundo: 'rgba(163,163,163,0.14)' },
   cancelado: { texto: 'Cancelado', cor: '#FF5252', fundo: 'rgba(255,82,82,0.14)' },
 };
 
@@ -296,8 +296,8 @@ function FotoProduto({ p, tamanho = 'card' }) {
     );
   }
   const paletas = [
-    ['#1C3524', '#D9A521'], ['#203C29', '#A87A12'], ['#18301F', '#F2CE5C'],
-    ['#24422D', '#D9A521'], ['#1F3A2B', '#F2CE5C'], ['#1E3826', '#A87A12'],
+    ['#62A222', '#F5C842'], ['#6AAA2A', '#C9981E'], ['#5E9E1E', '#FFE285'],
+    ['#6EAE2E', '#F5C842'], ['#7FBF3A', '#FFE285'], ['#66A626', '#C9981E'],
   ];
   const cores = paletas[(p.id || 0) % paletas.length];
   return (
@@ -358,7 +358,7 @@ export default function Loja() {
   // A loja vive fora do layout do PDV, entao pinta o fundo da pagina.
   useEffect(() => {
     const anterior = document.body.style.background;
-    document.body.style.background = '#061009';
+    document.body.style.background = '#4F8A10';
     document.body.style.margin = '0';
     return () => { document.body.style.background = anterior; };
   }, []);
@@ -720,7 +720,7 @@ export default function Loja() {
 
           <div className="lj-ok-cartao">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 12, fontWeight: 900, color: '#A3A3A3', letterSpacing: 0.6 }}>PEDIDO #{pedidoFeito.id}</span>
+              <span style={{ fontSize: 12, fontWeight: 900, color: '#E6F4D6', letterSpacing: 0.6 }}>PEDIDO #{pedidoFeito.id}</span>
               <span className="lj-selo">AGUARDANDO A LOJA</span>
             </div>
 
@@ -741,7 +741,7 @@ export default function Loja() {
                 <div className="lj-ttl" style={{ fontSize: 15, lineHeight: 1.2 }}>
                   {pedidoFeito.tipo_entrega === 'entrega' ? 'Entrega' : 'Retirada'} · {pedidoFeito.janela || 'a combinar'}
                 </div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#A3A3A3' }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#E6F4D6' }}>
                   {pedidoFeito.tipo_entrega === 'entrega' ? pedidoFeito.endereco : config?.endereco_loja}
                 </div>
               </div>
@@ -749,7 +749,7 @@ export default function Loja() {
 
             {pedidoFeito.assinatura && (
               <div className="lj-aviso" style={{ marginTop: 0 }}>
-                <Ico.Repetir c="#F2CE5C" s={20} />
+                <Ico.Repetir c="#FFE285" s={20} />
                 <span>Vai repetir {pedidoFeito.frequencia === 'semanal' ? 'toda semana' : pedidoFeito.frequencia === 'mensal' ? 'todo mês' : 'a cada 15 dias'}, no mesmo horário.</span>
               </div>
             )}
@@ -810,7 +810,7 @@ export default function Loja() {
             <div style={{ flexGrow: 1, minWidth: 0 }}>
               <div className="lj-marca">{produto.marca}</div>
               <div className="lj-ttl" style={{ fontSize: 21, lineHeight: 1.12 }}>{produto.nome}</div>
-              <div style={{ display: 'inline-block', marginTop: 8, background: 'rgba(217,165,33,0.14)', borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 800, color: '#D9A521' }}>
+              <div style={{ display: 'inline-block', marginTop: 8, background: 'rgba(245,200,66,0.14)', borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 800, color: '#F5C842' }}>
                 {tagsDoProduto(produto)}
               </div>
             </div>
@@ -857,11 +857,11 @@ export default function Loja() {
                     <span className="lj-ttl" style={{ display: 'block', fontSize: 17, lineHeight: 1.15 }}>
                       Saco {produto.peso_saco_kg} kg
                     </span>
-                    <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#A3A3A3' }}>
+                    <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#E6F4D6' }}>
                       sai a {money(produto.preco_saco_fechado / (produto.peso_saco_kg || 1))} o quilo
                     </span>
                   </span>
-                  <span className="lj-ttl" style={{ fontSize: 18, color: '#F2CE5C' }}>{money(produto.preco_saco_fechado)}</span>
+                  <span className="lj-ttl" style={{ fontSize: 18, color: '#FFE285' }}>{money(produto.preco_saco_fechado)}</span>
                 </button>
               )}
 
@@ -876,7 +876,7 @@ export default function Loja() {
                     <span className="lj-ttl" style={{ display: 'block', fontSize: 17, lineHeight: 1.15 }}>
                       Leve {produto.promo_qtd} por {money(produto.promo_preco)}
                     </span>
-                    <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#A3A3A3' }}>
+                    <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#E6F4D6' }}>
                       sai a {money(produto.promo_preco / produto.promo_qtd)} cada, em vez de {money(produto.preco_unitario)}
                     </span>
                   </span>
@@ -884,7 +884,7 @@ export default function Loja() {
               )}
 
               <div className="lj-caixa">
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#A3A3A3' }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#E6F4D6' }}>
                   {ehUnidade ? 'Quantas unidades?' : formato === 'saco' ? 'Quantos sacos?' : 'Quantos quilos?'}
                 </div>
                 <div className="lj-stepper">
@@ -899,7 +899,7 @@ export default function Loja() {
                     <div className="lj-ttl lj-quantia">
                       {quantia}{!ehUnidade && formato === 'kg' ? ' kg' : ''}
                     </div>
-                    <div style={{ fontSize: 12.5, fontWeight: 800, color: '#A3A3A3' }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 800, color: '#E6F4D6' }}>
                       {ehUnidade ? `${money(produto.preco_unitario)} cada`
                         : formato === 'saco' ? `${money(produto.preco_saco_fechado)} o saco · ${money(produto.preco_saco_fechado / (produto.peso_saco_kg || 1))} o kg`
                           : `${money(produto.preco_por_kg)} o quilo`}
@@ -916,7 +916,7 @@ export default function Loja() {
 
                 {!ehUnidade && formato === 'kg' && (
                   <div className="lj-aviso">
-                    <Ico.Check c="#F2CE5C" s={18} />
+                    <Ico.Check c="#FFE285" s={18} />
                     <span>Fracionado é pesado na hora, na sua frente.</span>
                   </div>
                 )}
@@ -935,8 +935,8 @@ export default function Loja() {
         {!semEstoque && (
           <div className="lj-acao">
             <div style={{ flexShrink: 0 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#A3A3A3' }}>Total</div>
-              <div className="lj-ttl" style={{ fontSize: 23, color: '#F2CE5C', lineHeight: 1.05 }}>{money(totalItem)}</div>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#E6F4D6' }}>Total</div>
+              <div className="lj-ttl" style={{ fontSize: 23, color: '#FFE285', lineHeight: 1.05 }}>{money(totalItem)}</div>
               {economia > 0 && <div className="lj-economia">você economiza {money(economia)}</div>}
             </div>
             <button className="lj-btn lj-btn-primario lj-btn-cresce" onClick={adicionarAoCarrinho}>
@@ -962,8 +962,8 @@ export default function Loja() {
         <div className="lj-conteudo lj-entra" key={tela}>
           {vazio && (
             <div className="lj-vazio">
-              <Ico.Carrinho c="#24422D" s={64} />
-              <div className="lj-ttl" style={{ fontSize: 18, color: '#F2CE5C', marginTop: 12 }}>Seu carrinho está vazio</div>
+              <Ico.Carrinho c="#6EAE2E" s={64} />
+              <div className="lj-ttl" style={{ fontSize: 18, color: '#FFE285', marginTop: 12 }}>Seu carrinho está vazio</div>
               <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 4 }}>Escolha a ração do seu pet e volte aqui.</div>
               <button className="lj-btn lj-btn-primario" style={{ marginTop: 16, display: 'inline-flex' }} onClick={() => setTela('catalogo')}>
                 Ver o catálogo
@@ -978,7 +978,7 @@ export default function Loja() {
                   <div className="lj-item" key={i.key}>
                     <div style={{ flexGrow: 1, minWidth: 0 }}>
                       <div className="lj-ttl" style={{ fontSize: 15.5, lineHeight: 1.15 }}>{i.marca} {i.nome}</div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#A3A3A3', marginTop: 2 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#E6F4D6', marginTop: 2 }}>
                         {i.tipo_venda === 'kit' ? (i.componentes || []).map((c) => `${c.quantidade}x ${c.nome}`).join(' + ')
                           : i.tipo_venda === 'saco' ? `Saco fechado de ${i.peso_saco_kg} kg`
                             : i.tipo_venda === 'kg' ? 'Fracionado por quilo' : 'Unidade'}
@@ -1003,11 +1003,11 @@ export default function Loja() {
                 <button className="lj-upsell" onClick={() => adicionarSugestao(sugestao)}>
                   <FotoProduto p={sugestao} />
                   <div style={{ flexGrow: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 900, color: '#D9A521', letterSpacing: 0.5 }}>LEVE TAMBÉM</div>
-                    <div className="lj-ttl" style={{ fontSize: 15, color: '#F2CE5C', lineHeight: 1.15 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 900, color: '#F5C842', letterSpacing: 0.5 }}>LEVE TAMBÉM</div>
+                    <div className="lj-ttl" style={{ fontSize: 15, color: '#FFE285', lineHeight: 1.15 }}>
                       {sugestao.marca} {sugestao.nome}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#F2CE5C' }}>{money(precoInicial(sugestao))}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#FFE285' }}>{money(precoInicial(sugestao))}</div>
                   </div>
                   <div className="lj-upsell-mais"><Ico.Mais c="#0B1A10" s={18} /></div>
                 </button>
@@ -1039,15 +1039,15 @@ export default function Loja() {
 
               <button className={`lj-assinatura ${assinar ? 'is-on' : ''}`} onClick={() => setAssinar((v) => !v)}>
                 <div style={{ flexGrow: 1 }}>
-                  <div className="lj-ttl" style={{ fontSize: 15.5, color: '#F2CE5C', lineHeight: 1.15 }}>Repetir esse pedido sozinho</div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#A3A3A3', marginTop: 2 }}>Clube: chega sempre no mesmo dia, sem pedir de novo</div>
+                  <div className="lj-ttl" style={{ fontSize: 15.5, color: '#FFE285', lineHeight: 1.15 }}>Repetir esse pedido sozinho</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#E6F4D6', marginTop: 2 }}>Clube: chega sempre no mesmo dia, sem pedir de novo</div>
                 </div>
                 <div className={`lj-switch ${assinar ? 'is-on' : ''}`}><i /></div>
               </button>
 
               {assinar && (
-                <div className="lj-caixa" style={{ background: 'rgba(217,165,33,0.12)', borderColor: 'rgba(217,165,33,0.5)' }}>
-                  <div className="lj-rotulo" style={{ color: '#D9A521' }}>DE QUANTO EM QUANTO TEMPO?</div>
+                <div className="lj-caixa" style={{ background: 'rgba(245,200,66,0.12)', borderColor: 'rgba(245,200,66,0.5)' }}>
+                  <div className="lj-rotulo" style={{ color: '#F5C842' }}>DE QUANTO EM QUANTO TEMPO?</div>
                   <div className="lj-chips">
                     {[['semanal', 'Semanal'], ['quinzenal', 'Quinzenal'], ['mensal', 'Mensal']].map(([v, l]) => (
                       <button key={v} className={`lj-chip lj-chip-grow ${frequencia === v ? 'is-on' : ''}`} onClick={() => setFrequencia(v)}>{l}</button>
@@ -1065,7 +1065,7 @@ export default function Loja() {
                   <span style={frete === 0 ? { fontWeight: 900, color: '#3DDC84' } : undefined}>{frete === 0 ? 'Grátis' : money(frete)}</span>
                 </div>
                 {entrega === 'entrega' && frete > 0 && (
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#A3A3A3' }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#E6F4D6' }}>
                     Falta {money(freteGratisAcima - subtotal)} para a entrega sair de graça.
                   </div>
                 )}
@@ -1173,8 +1173,8 @@ export default function Loja() {
         <div className="lj-conteudo lj-entra" key={tela}>
           {numeroSalvo.length < 10 ? (
             <div className="lj-caixa">
-              <div className="lj-ttl" style={{ fontSize: 17, color: '#F2CE5C' }}>Qual é o seu WhatsApp?</div>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#A3A3A3', margin: '4px 0 12px' }}>
+              <div className="lj-ttl" style={{ fontSize: 17, color: '#FFE285' }}>Qual é o seu WhatsApp?</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#E6F4D6', margin: '4px 0 12px' }}>
                 É por ele que a gente acha os seus pedidos. Não precisa de senha.
               </div>
               <div className="lj-campo">
@@ -1198,8 +1198,8 @@ export default function Loja() {
             <Pulando texto="Buscando seus pedidos…" />
           ) : meusPedidos.length === 0 ? (
             <div className="lj-vazio">
-              <Ico.Lista c="#24422D" s={56} />
-              <div className="lj-ttl" style={{ fontSize: 18, color: '#F2CE5C', marginTop: 12 }}>Nenhum pedido ainda</div>
+              <Ico.Lista c="#6EAE2E" s={56} />
+              <div className="lj-ttl" style={{ fontSize: 18, color: '#FFE285', marginTop: 12 }}>Nenhum pedido ainda</div>
               <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 4 }}>
                 Quando você fizer o primeiro, ele fica guardado aqui.
               </div>
@@ -1216,7 +1216,7 @@ export default function Loja() {
                     <div className="lj-pedido-topo">
                       <div>
                         <div className="lj-ttl" style={{ fontSize: 16, color: '#F5F5F5' }}>Pedido #{pd.id}</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#A3A3A3' }}>{dataCurta(pd.created_at)}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#E6F4D6' }}>{dataCurta(pd.created_at)}</div>
                       </div>
                       <span className="lj-pedido-status" style={{ color: st.cor, background: st.fundo }}>{st.texto}</span>
                     </div>
@@ -1277,13 +1277,13 @@ export default function Loja() {
             ['Sem precisar pedir de novo', 'a gente avisa no dia anterior'],
             ['Pause quando quiser', 'adiar, trocar a ração ou cancelar'],
           ].map(([t, s]) => (
-            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 13, background: '#0F2117', border: '2px solid #1F3A2B', borderRadius: 20, padding: 13 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 46, height: 46, borderRadius: 15, background: '#D9A521', flexShrink: 0 }}>
+            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 13, background: '#5A9A18', border: '2px solid #7FBF3A', borderRadius: 20, padding: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 46, height: 46, borderRadius: 15, background: '#F5C842', flexShrink: 0 }}>
                 <Ico.Repetir />
               </div>
               <div>
                 <div className="lj-ttl" style={{ fontSize: 16, lineHeight: 1.15 }}>{t}</div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#A3A3A3' }}>{s}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#E6F4D6' }}>{s}</div>
               </div>
             </div>
           ))}
@@ -1307,14 +1307,14 @@ export default function Loja() {
             <div className="lj-ttl lj-barra-titulo">Escolher ração</div>
             <button className="lj-icone-btn" onClick={() => setTela('carrinho')} aria-label="Carrinho">
               <Ico.Carrinho />
-              {totalItens > 0 && <span className="lj-badge" style={{ position: 'absolute', top: -4, right: -4, transform: 'none', background: '#D9A521', color: '#0B1A10' }}>{totalItens}</span>}
+              {totalItens > 0 && <span className="lj-badge" style={{ position: 'absolute', top: -4, right: -4, transform: 'none', background: '#F5C842', color: '#0B1A10' }}>{totalItens}</span>}
             </button>
           </div>
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar marca ou ração"
-            style={{ width: '100%', border: 0, borderRadius: 14, padding: '12px 13px', fontSize: 15, fontWeight: 700, background: '#15291E', color: '#F5F5F5', outline: 'none' }}
+            style={{ width: '100%', border: 0, borderRadius: 14, padding: '12px 13px', fontSize: 15, fontWeight: 700, background: '#67A826', color: '#F5F5F5', outline: 'none' }}
           />
         </div>
 
@@ -1351,7 +1351,7 @@ export default function Loja() {
 
           <div className="lj-divisor" />
 
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#A3A3A3' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#E6F4D6' }}>
             {filtrados.length === 0 ? 'Nada com esses filtros'
               : filtrados.length === 1 ? '1 produto encontrado'
                 : `${filtrados.length} produtos encontrados`}
@@ -1392,9 +1392,9 @@ export default function Loja() {
           )}
 
           {filtrados.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '26px 14px', background: '#0F2117', border: '2px dashed #1F3A2B', borderRadius: 20 }}>
-              <div className="lj-ttl" style={{ fontSize: 16, color: '#F2CE5C' }}>Nada com esses filtros</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#A3A3A3', marginTop: 4 }}>
+            <div style={{ textAlign: 'center', padding: '26px 14px', background: '#5A9A18', border: '2px dashed #7FBF3A', borderRadius: 20 }}>
+              <div className="lj-ttl" style={{ fontSize: 16, color: '#FFE285' }}>Nada com esses filtros</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#E6F4D6', marginTop: 4 }}>
                 Tire um filtro ou chame a gente no WhatsApp que encomendamos pra você.
               </div>
             </div>
@@ -1454,7 +1454,7 @@ export default function Loja() {
         </div>
 
         <div>
-          <div className="lj-ttl" style={{ fontSize: 14, color: '#A3A3A3', letterSpacing: 0.4 }}>OU VÁ DIRETO PELO PERFIL</div>
+          <div className="lj-ttl" style={{ fontSize: 14, color: '#E6F4D6', letterSpacing: 0.4 }}>OU VÁ DIRETO PELO PERFIL</div>
           <div className="lj-chips" style={{ marginTop: 10 }}>
             {[
               ['Cão adulto', { especie: 'cao', perfil: 'adulto', porte: 'todos' }],
@@ -1476,13 +1476,13 @@ export default function Loja() {
           <button className="lj-repetir" onClick={repetirUltimo}>
             <div className="lj-repetir-icone"><Ico.Repetir /></div>
             <div style={{ flexGrow: 1 }}>
-              <div className="lj-ttl" style={{ fontSize: 16, color: '#F2CE5C', lineHeight: 1.15 }}>Pedir o mesmo de novo</div>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#A3A3A3' }}>
+              <div className="lj-ttl" style={{ fontSize: 16, color: '#FFE285', lineHeight: 1.15 }}>Pedir o mesmo de novo</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#E6F4D6' }}>
                 {descricaoItem(ultimoPedido.itens[0])}
                 {ultimoPedido.itens.length > 1 ? ` + ${ultimoPedido.itens.length - 1}` : ''}
               </div>
             </div>
-            <Ico.Seta c="#F2CE5C" />
+            <Ico.Seta c="#FFE285" />
           </button>
         )}
 
@@ -1502,7 +1502,7 @@ export default function Loja() {
 
         {kits.length > 0 && (
           <div>
-            <div className="lj-ttl" style={{ fontSize: 18, color: '#F2CE5C' }}>Kits em promoção</div>
+            <div className="lj-ttl" style={{ fontSize: 18, color: '#FFE285' }}>Kits em promoção</div>
             <div className="lj-lista" style={{ marginTop: 10 }}>
               {kits.map((k) => <CardKit key={k.id} kit={k} aoAdicionar={() => adicionarKit(k)} />)}
             </div>
@@ -1512,8 +1512,8 @@ export default function Loja() {
         {maisPedidos.length > 0 && (
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <div className="lj-ttl" style={{ fontSize: 18, color: '#F2CE5C' }}>Mais pedidos da loja</div>
-              <button style={{ background: 'transparent', fontSize: 13.5, fontWeight: 800, color: '#D9A521', padding: 4 }} onClick={() => { setEspecie('todos'); setPerfil('todos'); setPorte('todos'); setTela('catalogo'); }}>
+              <div className="lj-ttl" style={{ fontSize: 18, color: '#FFE285' }}>Mais pedidos da loja</div>
+              <button style={{ background: 'transparent', fontSize: 13.5, fontWeight: 800, color: '#F5C842', padding: 4 }} onClick={() => { setEspecie('todos'); setPerfil('todos'); setPorte('todos'); setTela('catalogo'); }}>
                 ver tudo
               </button>
             </div>
@@ -1527,8 +1527,8 @@ export default function Loja() {
                     <div className="lj-tags">{tagsDoProduto(p)}</div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#A3A3A3' }}>a partir de</div>
-                    <div className="lj-ttl" style={{ fontSize: 16, color: '#F2CE5C' }}>{money(precoInicial(p))}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#E6F4D6' }}>a partir de</div>
+                    <div className="lj-ttl" style={{ fontSize: 16, color: '#FFE285' }}>{money(precoInicial(p))}</div>
                   </div>
                 </button>
               ))}
@@ -1538,7 +1538,7 @@ export default function Loja() {
 
         {produtos.length === 0 && (
           <div className="lj-vazio">
-            <div className="lj-ttl" style={{ fontSize: 17, color: '#F2CE5C' }}>Catálogo em montagem</div>
+            <div className="lj-ttl" style={{ fontSize: 17, color: '#FFE285' }}>Catálogo em montagem</div>
             <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 4 }}>
               Nenhum produto na vitrine ainda. Em /painel, na aba Produtos, clique no olho do produto para publicar.
             </div>
@@ -1583,7 +1583,7 @@ export default function Loja() {
 /* ------------------------------------------------------------------ */
 
 function Abas({ tela, setTela, totalItens, aoAbrirMeus }) {
-  const cor = (t) => (tela === t ? '#D9A521' : '#6B6B6B');
+  const cor = (t) => (tela === t ? '#F5C842' : '#D4EBC0');
   return (
     <nav className="lj-abas">
       <button className={`lj-aba ${tela === 'home' ? 'is-on' : ''}`} onClick={() => setTela('home')}>

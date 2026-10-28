@@ -355,7 +355,7 @@ export default function Products() {
                         <div className="foto-campo-quadro">
                           {form.foto_url
                             ? <img src={form.foto_url} alt="" onError={(e) => { e.currentTarget.style.opacity = 0.2; }} />
-                            : <Store size={22} color="#A3A3A3" />}
+                            : <Store size={22} color="#E6F4D6" />}
                         </div>
                         <div className="foto-campo-lado">
                           <div className="foto-campo-botoes">

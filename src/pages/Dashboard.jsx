@@ -98,7 +98,7 @@ export default function Dashboard() {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 2 }}>
         <Card sx={{ borderLeft: '4px solid', borderLeftColor: 'primary.main' }}>
           <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {cardIcon(TrendingUp, 'rgba(217,165,33,0.14)', '#D9A521')}
+            {cardIcon(TrendingUp, 'rgba(245,200,66,0.14)', '#F5C842')}
             <Box><Typography variant="caption" color="text.secondary">Faturamento Hoje</Typography><Typography variant="h6">R$ {safeData.faturamento_dia.toFixed(2)}</Typography></Box>
           </CardContent>
         </Card>
@@ -143,7 +143,7 @@ export default function Dashboard() {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 2 }}>
         <Card>
           <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {cardIcon(Warehouse, 'rgba(255,217,90,0.14)', '#F2CE5C')}
+            {cardIcon(Warehouse, 'rgba(255,217,90,0.14)', '#FFE285')}
             <Box><Typography variant="caption" color="text.secondary">Estoque Total</Typography><Typography variant="h6">{safeData.estoque_total_kg > 0 || safeData.estoque_total_unidade > 0 ? [safeData.estoque_total_kg > 0 && `${safeData.estoque_total_kg.toFixed(0)} kg`, safeData.estoque_total_unidade > 0 && `${safeData.estoque_total_unidade} un.`].filter(Boolean).join(' + ') : '0 kg'}</Typography></Box>
           </CardContent>
         </Card>

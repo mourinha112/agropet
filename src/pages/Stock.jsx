@@ -183,7 +183,7 @@ export default function Stock() {
       {activeTab === 'movimentacoes' && (
         <>
           <div className="filter-bar" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <select value={movFilter} onChange={e => setMovFilter(e.target.value)} style={{ padding: '0.5rem 0.75rem', border: '1.5px solid #1F3A2B', borderRadius: '10px', fontSize: '0.9rem', background: '#15291E', color: '#F5F5F5' }}>
+            <select value={movFilter} onChange={e => setMovFilter(e.target.value)} style={{ padding: '0.5rem 0.75rem', border: '1.5px solid #7FBF3A', borderRadius: '10px', fontSize: '0.9rem', background: '#67A826', color: '#F5F5F5' }}>
               <option value="">Todos os produtos</option>
               {products.map(p => <option key={p.id} value={p.id}>{p.nome} ({p.marca})</option>)}
             </select>

@@ -154,11 +154,11 @@ export default function Cashier() {
   function movColor(tipo) {
     switch (tipo) {
       case 'abertura': return '#5AB0FF';
-      case 'fechamento': return '#A3A3A3';
+      case 'fechamento': return '#E6F4D6';
       case 'suprimento': return '#3DDC84';
       case 'sangria': return '#FF5252';
-      case 'venda': return '#D9A521';
-      default: return '#A3A3A3';
+      case 'venda': return '#F5C842';
+      default: return '#E6F4D6';
     }
   }
 
@@ -383,8 +383,8 @@ export default function Cashier() {
                   )}
                 </div>
                 {(selectedHistory.por_pagamento || []).length > 0 && (
-                  <div className="cx-card-body" style={{ borderTop: '1px solid #1F3A2B' }}>
-                    <strong style={{ fontSize: '0.85rem', color: '#A3A3A3', marginBottom: '0.5rem', display: 'block' }}>Por Pagamento</strong>
+                  <div className="cx-card-body" style={{ borderTop: '1px solid #7FBF3A' }}>
+                    <strong style={{ fontSize: '0.85rem', color: '#E6F4D6', marginBottom: '0.5rem', display: 'block' }}>Por Pagamento</strong>
                     {(selectedHistory.por_pagamento || []).map(p => (
                       <div key={p.forma_pagamento} className="cx-pay-row">
                         <div className="cx-pay-icon">{payIcon(p.forma_pagamento)}</div>
@@ -408,8 +408,8 @@ export default function Cashier() {
                 </div>
               </div>
             ) : (
-              <div className="cx-closed" style={{ background: '#0F2117', borderRadius: '16px', minHeight: '300px' }}>
-                <History size={40} style={{ color: '#A3A3A3' }} />
+              <div className="cx-closed" style={{ background: '#5A9A18', borderRadius: '16px', minHeight: '300px' }}>
+                <History size={40} style={{ color: '#E6F4D6' }} />
                 <p className="text-muted">Selecione um caixa para ver detalhes</p>
               </div>
             )}
@@ -445,8 +445,8 @@ export default function Cashier() {
         <div className="modal-overlay" onClick={() => setShowClose(false)}>
           <div className="modal modal-small" onClick={e => e.stopPropagation()}>
             <div className="modal-header"><h2><Lock size={20} /> Fechar Caixa</h2><button className="btn-icon" onClick={() => setShowClose(false)}><X size={20} /></button></div>
-            <div style={{ textAlign: 'center', padding: '1rem 0', fontSize: '1.1rem', color: '#A3A3A3' }}>
-              Saldo estimado: <strong style={{ color: '#F2CE5C', fontSize: '1.5rem' }}>R$ {safe(r?.saldo_estimado)}</strong>
+            <div style={{ textAlign: 'center', padding: '1rem 0', fontSize: '1.1rem', color: '#E6F4D6' }}>
+              Saldo estimado: <strong style={{ color: '#FFE285', fontSize: '1.5rem' }}>R$ {safe(r?.saldo_estimado)}</strong>
             </div>
             <form onSubmit={handleClose}>
               <div className="form-group">

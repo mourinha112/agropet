@@ -206,7 +206,7 @@ export default function Photos() {
             >
               {p.foto_url
                 ? <img src={p.foto_url} alt={p.nome} loading="lazy" />
-                : <ImageOff size={32} color="#A3A3A3" />}
+                : <ImageOff size={32} color="#E6F4D6" />}
             </div>
             <div className="foto-info">
               <div className="foto-marca">{p.marca || 'sem marca'}</div>
@@ -243,7 +243,7 @@ export default function Photos() {
               <div className="foto-previa">
                 <img src={previa.preview} alt="Prévia" />
               </div>
-              <p style={{ fontSize: '0.85rem', color: '#A3A3A3', marginTop: '0.75rem' }}>
+              <p style={{ fontSize: '0.85rem', color: '#E6F4D6', marginTop: '0.75rem' }}>
                 <strong>{previa.produto.marca} {previa.produto.nome}</strong><br />
                 {previa.jaRecortada
                   ? 'Essa imagem já veio sem fundo — só centralizei.'
@@ -272,7 +272,7 @@ export default function Photos() {
               <button className="btn-icon" onClick={() => setColando(null)}><X size={18} /></button>
             </div>
             <div style={{ padding: '0 1.25rem 1.25rem' }}>
-              <p style={{ fontSize: '0.85rem', color: '#A3A3A3', marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '0.85rem', color: '#E6F4D6', marginBottom: '0.75rem' }}>
                 {colando.marca} {colando.nome}
               </p>
               <div className="form-group">

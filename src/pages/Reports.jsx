@@ -12,8 +12,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-const COLORS = ['#D9A521', '#5AB0FF', '#3DDC84', '#FFA533', '#CE93D8', '#FF6FAE', '#4DD0E1', '#C6E377'];
-const PAYMENT_COLORS = { pix: '#3DDC84', dinheiro: '#FFA533', cartao: '#5AB0FF', credito: '#CE93D8', debito: '#4DD0E1', outros: '#A3A3A3' };
+const COLORS = ['#F5C842', '#5AB0FF', '#3DDC84', '#FFA533', '#CE93D8', '#FF6FAE', '#4DD0E1', '#C6E377'];
+const PAYMENT_COLORS = { pix: '#3DDC84', dinheiro: '#FFA533', cartao: '#5AB0FF', credito: '#CE93D8', debito: '#4DD0E1', outros: '#E6F4D6' };
 const PAYMENT_LABELS = { pix: 'PIX', dinheiro: 'Dinheiro', cartao: 'Cartão', credito: 'Crédito', debito: 'Débito', outros: 'Outros' };
 
 export default function Reports() {
@@ -109,7 +109,7 @@ export default function Reports() {
       name: PAYMENT_LABELS[p.forma_pagamento] || p.forma_pagamento,
       value: p.total,
       vendas: p.vendas,
-      color: PAYMENT_COLORS[p.forma_pagamento] || '#A3A3A3'
+      color: PAYMENT_COLORS[p.forma_pagamento] || '#E6F4D6'
     }));
   }, [summary]);
 
@@ -200,15 +200,15 @@ export default function Reports() {
                 <AreaChart data={summary.vendas_por_dia}>
                   <defs>
                     <linearGradient id="colorFat" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D9A521" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#D9A521" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#F5C842" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#F5C842" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1F3A2B" />
-                  <XAxis dataKey="dia" tick={{ fontSize: 12, fill: '#A3A3A3' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#A3A3A3' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#7FBF3A" />
+                  <XAxis dataKey="dia" tick={{ fontSize: 12, fill: '#E6F4D6' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#E6F4D6' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="faturamento" name="Faturamento" stroke="#D9A521" fill="url(#colorFat)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="faturamento" name="Faturamento" stroke="#F5C842" fill="url(#colorFat)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -246,7 +246,7 @@ export default function Reports() {
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                       {paymentPieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                     </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ background: '#15291E', border: '1px solid #1F3A2B', borderRadius: 8, color: '#F5F5F5' }} itemStyle={{ color: '#F5F5F5' }} />
+                    <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ background: '#67A826', border: '1px solid #7FBF3A', borderRadius: 8, color: '#F5F5F5' }} itemStyle={{ color: '#F5F5F5' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -258,7 +258,7 @@ export default function Reports() {
                     {summary.vendas_por_pagamento.map(p => (
                       <tr key={p.forma_pagamento}>
                         <td>
-                          <span className="report-color-dot" style={{ background: PAYMENT_COLORS[p.forma_pagamento] || '#A3A3A3' }}></span>
+                          <span className="report-color-dot" style={{ background: PAYMENT_COLORS[p.forma_pagamento] || '#E6F4D6' }}></span>
                           {PAYMENT_LABELS[p.forma_pagamento] || p.forma_pagamento}
                         </td>
                         <td>{p.vendas}</td>
@@ -282,12 +282,12 @@ export default function Reports() {
             <h3>Faturamento Mensal (Últimos 12 meses)</h3>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={monthly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1F3A2B" />
-                <XAxis dataKey="mes" tickFormatter={formatMonthLabel} tick={{ fontSize: 12, fill: '#A3A3A3' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#A3A3A3' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#7FBF3A" />
+                <XAxis dataKey="mes" tickFormatter={formatMonthLabel} tick={{ fontSize: 12, fill: '#E6F4D6' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#E6F4D6' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
                 <Tooltip content={<CustomTooltip />} labelFormatter={formatMonthLabel} />
                 <Legend />
-                <Bar dataKey="faturamento" name="Faturamento" fill="#D9A521" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faturamento" name="Faturamento" fill="#F5C842" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -297,9 +297,9 @@ export default function Reports() {
             <h3>Quantidade de Vendas por Mês</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1F3A2B" />
-                <XAxis dataKey="mes" tickFormatter={formatMonthLabel} tick={{ fontSize: 12, fill: '#A3A3A3' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#A3A3A3' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#7FBF3A" />
+                <XAxis dataKey="mes" tickFormatter={formatMonthLabel} tick={{ fontSize: 12, fill: '#E6F4D6' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#E6F4D6' }} />
                 <Tooltip content={<CustomTooltip prefix="" />} labelFormatter={formatMonthLabel} />
                 <Legend />
                 <Line type="monotone" dataKey="vendas" name="Vendas" stroke="#5AB0FF" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
@@ -318,9 +318,9 @@ export default function Reports() {
                     <stop offset="95%" stopColor="#3DDC84" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1F3A2B" />
-                <XAxis dataKey="data" tickFormatter={d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) : ''} tick={{ fontSize: 11, fill: '#A3A3A3' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#A3A3A3' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#7FBF3A" />
+                <XAxis dataKey="data" tickFormatter={d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) : ''} tick={{ fontSize: 11, fill: '#E6F4D6' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#E6F4D6' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
                 <Tooltip content={<CustomTooltip />} labelFormatter={formatDate} />
                 <Area type="monotone" dataKey="faturamento" name="Faturamento" stroke="#3DDC84" fill="url(#colorDaily)" strokeWidth={2} />
               </AreaChart>
@@ -337,7 +337,7 @@ export default function Reports() {
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                     {expensesPieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ background: '#15291E', border: '1px solid #1F3A2B', borderRadius: 8, color: '#F5F5F5' }} itemStyle={{ color: '#F5F5F5' }} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ background: '#67A826', border: '1px solid #7FBF3A', borderRadius: 8, color: '#F5F5F5' }} itemStyle={{ color: '#F5F5F5' }} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -353,11 +353,11 @@ export default function Reports() {
             <h3>Faturamento dos Últimos 30 Dias</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={daily}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1F3A2B" />
-                <XAxis dataKey="data" tickFormatter={d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) : ''} tick={{ fontSize: 11, fill: '#A3A3A3' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#A3A3A3' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#7FBF3A" />
+                <XAxis dataKey="data" tickFormatter={d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) : ''} tick={{ fontSize: 11, fill: '#E6F4D6' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#E6F4D6' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
                 <Tooltip content={<CustomTooltip />} labelFormatter={formatDate} />
-                <Bar dataKey="faturamento" name="Faturamento" fill="#D9A521" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faturamento" name="Faturamento" fill="#F5C842" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -396,12 +396,12 @@ export default function Reports() {
             <h3>Evolução do Faturamento Mensal</h3>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={monthly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1F3A2B" />
-                <XAxis dataKey="mes" tickFormatter={formatMonthLabel} tick={{ fontSize: 12, fill: '#A3A3A3' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#A3A3A3' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#7FBF3A" />
+                <XAxis dataKey="mes" tickFormatter={formatMonthLabel} tick={{ fontSize: 12, fill: '#E6F4D6' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#E6F4D6' }} tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
                 <Tooltip content={<CustomTooltip />} labelFormatter={formatMonthLabel} />
                 <Legend />
-                <Bar dataKey="faturamento" name="Faturamento" fill="#D9A521" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faturamento" name="Faturamento" fill="#F5C842" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -442,11 +442,11 @@ export default function Reports() {
                 <h3>Top 10 Produtos - {formatFullMonth(selectedMonth)}</h3>
                 <ResponsiveContainer width="100%" height={Math.max(300, summary.top_produtos.length * 40)}>
                   <BarChart data={summary.top_produtos} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1F3A2B" />
-                    <XAxis type="number" tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} tick={{ fontSize: 12, fill: '#A3A3A3' }} />
-                    <YAxis type="category" dataKey="nome" width={180} tick={{ fontSize: 12, fill: '#A3A3A3' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#7FBF3A" />
+                    <XAxis type="number" tickFormatter={v => `R$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} tick={{ fontSize: 12, fill: '#E6F4D6' }} />
+                    <YAxis type="category" dataKey="nome" width={180} tick={{ fontSize: 12, fill: '#E6F4D6' }} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="total" name="Faturamento" fill="#D9A521" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="total" name="Faturamento" fill="#F5C842" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -19,11 +19,11 @@ const FILTROS = [
 
 // Preto solido no que precisa de acao; vai clareando conforme resolve.
 const STATUS = {
-  novo: { rotulo: 'Novo', cor: '#0B1A10', fundo: '#D9A521' },
+  novo: { rotulo: 'Novo', cor: '#0B1A10', fundo: '#F5C842' },
   confirmado: { rotulo: 'Confirmado', cor: '#5AB0FF', fundo: 'rgba(90,176,255,.16)' },
   separando: { rotulo: 'Separando', cor: '#FFA533', fundo: 'rgba(255,165,51,.16)' },
   pronto: { rotulo: 'Pronto', cor: '#3DDC84', fundo: 'rgba(61,220,132,.16)' },
-  entregue: { rotulo: 'Entregue', cor: '#A3A3A3', fundo: 'rgba(163,163,163,.16)' },
+  entregue: { rotulo: 'Entregue', cor: '#E6F4D6', fundo: 'rgba(163,163,163,.16)' },
   cancelado: { rotulo: 'Cancelado', cor: '#FF5252', fundo: 'rgba(255,82,82,.16)' },
 };
 

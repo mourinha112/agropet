@@ -24,12 +24,12 @@ const FILTROS = [
 ];
 
 const STATUS_INFO = {
-  novo: { label: 'Novo', cor: '#D9A521', fundo: 'rgba(217,165,33,0.16)' },
+  novo: { label: 'Novo', cor: '#F5C842', fundo: 'rgba(245,200,66,0.16)' },
   confirmado: { label: 'Confirmado', cor: '#3DDC84', fundo: 'rgba(61,220,132,0.14)' },
   separando: { label: 'Separando', cor: '#FFA533', fundo: 'rgba(255,165,51,0.14)' },
   pronto: { label: 'Pronto', cor: '#5AB0FF', fundo: 'rgba(90,176,255,0.14)' },
-  entregue: { label: 'Entregue', cor: '#A3A3A3', fundo: 'rgba(163,163,163,0.16)' },
-  cancelado: { label: 'Cancelado', cor: '#A3A3A3', fundo: 'rgba(163,163,163,0.10)' },
+  entregue: { label: 'Entregue', cor: '#E6F4D6', fundo: 'rgba(163,163,163,0.16)' },
+  cancelado: { label: 'Cancelado', cor: '#E6F4D6', fundo: 'rgba(163,163,163,0.10)' },
 };
 
 const PROXIMO_STATUS = {
@@ -319,7 +319,7 @@ export default function Orders() {
               <button className="btn-icon" onClick={() => setConfirmando(null)}><X size={18} /></button>
             </div>
             <div style={{ padding: '0 1.25rem 1.25rem' }}>
-              <p style={{ color: '#A3A3A3', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              <p style={{ color: '#E6F4D6', fontSize: '0.9rem', marginBottom: '1rem' }}>
                 Isso cria a venda de {money(confirmando.subtotal)} no caixa e dá baixa no estoque.
                 {confirmando.frete > 0 && ` A taxa de entrega de ${money(confirmando.frete)} fica registrada só no pedido.`}
               </p>
