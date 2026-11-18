@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useToast } from '../components/Toast';
 import Loading from '../components/Loading';
-import { Warehouse, PackagePlus, ArrowDown, ArrowUp, X, Clock, Printer } from 'lucide-react';
+import { Warehouse, PackagePlus, ArrowDown, X, Printer, Pencil } from 'lucide-react';
 
 export default function Stock() {
   const toast = useToast();
@@ -11,7 +11,9 @@ export default function Stock() {
   const [search, setSearch] = useState('');
   const [showEntry, setShowEntry] = useState(null);
   const [entryProduct, setEntryProduct] = useState(null);
-  const [entryForm, setEntryForm] = useState({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao' });
+  const [entryForm, setEntryForm] = useState({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao', senha: '' });
+  const [editProduct, setEditProduct] = useState(null);
+  const [editForm, setEditForm] = useState({ estoque: '', motivo: 'Ajuste inventario', senha: '' });
   const [activeTab, setActiveTab] = useState('estoque');
   const [movFilter, setMovFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,23 @@ export default function Stock() {
       setProducts(res.data);
     } catch (err) { toast.error('Erro ao carregar produtos'); }
     finally { setLoading(false); }
+  }
+
+  function openEditModal(p) {
+    setEditProduct(p);
+    setEditForm({ estoque: String(isRacao(p) ? (p.estoque_kg || 0) : (p.estoque_unidade ?? 0)), motivo: 'Ajuste inventario', senha: '' });
+  }
+
+  async function handleEdit(e) {
+    e.preventDefault();
+    const valor = isRacao(editProduct) ? parseFloat(editForm.estoque) : parseInt(editForm.estoque, 10);
+    if (!Number.isFinite(valor) || valor < 0) { toast.error('Informe uma quantidade valida'); return; }
+    try {
+      const res = await api.post(`/products/${editProduct.id}/stock-adjust`, { estoque: valor, motivo: editForm.motivo, senha_admin: editForm.senha });
+      toast.success(res.data?.semMudanca ? 'O estoque ja estava com esse valor' : 'Estoque corrigido!');
+      setEditProduct(null);
+      loadData();
+    } catch (err) { toast.error(err.response?.data?.error || err.message); }
   }
 
   async function loadMovements() {
@@ -45,11 +64,11 @@ export default function Stock() {
     if (qty == null || qty <= 0) { toast.error('Informe uma quantidade valida'); return; }
     try {
       await api.post(`/products/${showEntry}/stock-entry`, byUnit
-        ? { quantidade_unidade: qty, motivo: entryForm.motivo }
-        : { quantidade_kg: qty, motivo: entryForm.motivo });
+        ? { quantidade_unidade: qty, motivo: entryForm.motivo, senha_admin: entryForm.senha }
+        : { quantidade_kg: qty, motivo: entryForm.motivo, senha_admin: entryForm.senha });
       setShowEntry(null);
       setEntryProduct(null);
-      setEntryForm({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao' });
+      setEntryForm({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao', senha: '' });
       toast.success('Estoque atualizado!');
       loadData();
     } catch (err) { toast.error(err.response?.data?.error || err.message); }
@@ -58,7 +77,7 @@ export default function Stock() {
   function openEntryModal(p) {
     setEntryProduct(p);
     setShowEntry(p.id);
-    setEntryForm({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao' });
+    setEntryForm({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao', senha: '' });
   }
 
   function handlePrintStock() {
@@ -110,6 +129,29 @@ export default function Stock() {
         <button className="btn btn-secondary btn-sm" onClick={handlePrintStock}><Printer size={14} /> Imprimir Relatorio</button>
       </div>
 
+      {editProduct && (
+        <div className="modal-overlay" onClick={() => setEditProduct(null)}>
+          <div className="modal modal-small" onClick={e => e.stopPropagation()}>
+            <div className="modal-header"><h2>Editar Estoque</h2><button className="btn-icon" onClick={() => setEditProduct(null)}><X size={20} /></button></div>
+            <form onSubmit={handleEdit}>
+              <p style={{ marginTop: 0 }}>
+                <strong>{editProduct.nome}</strong> <small className="text-muted">{editProduct.marca}</small><br />
+                <small className="text-muted">Atual: {isRacao(editProduct) ? `${(editProduct.estoque_kg || 0).toFixed(1)} kg` : `${editProduct.estoque_unidade ?? 0} un.`}</small>
+              </p>
+              <div className="form-group"><label>Estoque correto ({isRacao(editProduct) ? 'kg' : 'un.'})</label>
+                <input type="number" min="0" step={isRacao(editProduct) ? '0.1' : '1'} value={editForm.estoque} onChange={e => setEditForm({ ...editForm, estoque: e.target.value })} required autoFocus /></div>
+              <div className="form-group"><label>Motivo</label>
+                <select value={editForm.motivo} onChange={e => setEditForm({ ...editForm, motivo: e.target.value })}>
+                  <option value="Ajuste inventario">Ajuste inventario</option><option value="Correcao de lancamento">Correcao de lancamento</option><option value="Perda/avaria">Perda/avaria</option><option value="Vencido">Vencido</option><option value="Uso interno">Uso interno</option>
+                </select>
+              </div>
+              <div className="form-group"><label>Senha de admin do estoque</label><input type="password" autoComplete="off" value={editForm.senha} onChange={e => setEditForm({ ...editForm, senha: e.target.value })} required /></div>
+              <div className="form-actions"><button type="button" className="btn btn-secondary" onClick={() => setEditProduct(null)}>Cancelar</button><button type="submit" className="btn btn-primary">Salvar</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="cards-grid cards-grid-4">
         <div className="card card-green"><div className="card-icon"><Warehouse size={24} /></div><div className="card-info"><span className="card-label">Estoque Total</span><span className="card-value">{estoqueTotal > 0 || estoqueTotalUn > 0 ? [estoqueTotal > 0 && `${estoqueTotal.toFixed(0)} kg`, estoqueTotalUn > 0 && `${estoqueTotalUn} un.`].filter(Boolean).join(' + ') : '0 kg'}</span></div></div>
         <div className="card card-blue"><div className="card-icon"><PackagePlus size={24} /></div><div className="card-info"><span className="card-label">Produtos Ativos</span><span className="card-value">{products.length}</span></div></div>
@@ -142,6 +184,7 @@ export default function Stock() {
                       <option value="Reposicao">Reposicao</option><option value="Compra fornecedor">Compra fornecedor</option><option value="Ajuste inventario">Ajuste inventario</option><option value="Devolucao">Devolucao</option>
                     </select>
                   </div>
+                  <div className="form-group"><label>Senha de admin do estoque</label><input type="password" autoComplete="off" value={entryForm.senha} onChange={e => setEntryForm({ ...entryForm, senha: e.target.value })} required /></div>
                   <div className="form-actions"><button type="button" className="btn btn-secondary" onClick={() => { setShowEntry(null); setEntryProduct(null); }}>Cancelar</button><button type="submit" className="btn btn-primary">Confirmar</button></div>
                 </form>
               </div>
@@ -169,7 +212,12 @@ export default function Stock() {
                         <td><strong>{p.nome}</strong></td><td>{p.marca}</td><td className="capitalize">{p.categoria || 'racao'}</td>
                         <td><strong>{racao ? valor.toFixed(1) : valor} {un}</strong></td>
                         <td><span className={`stock-badge stock-${status}`}>{label}</span></td>
-                        <td><button className="btn btn-sm btn-primary" onClick={() => openEntryModal(p)}><PackagePlus size={14} /> Entrada</button></td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            <button className="btn btn-sm btn-primary" onClick={() => openEntryModal(p)}><PackagePlus size={14} /> Entrada</button>
+                            <button className="btn btn-sm btn-secondary" onClick={() => openEditModal(p)}><Pencil size={14} /> Editar</button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })
@@ -203,8 +251,8 @@ export default function Stock() {
                       <tr key={m.id}>
                         <td>{new Date(m.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
                         <td><strong>{nome}</strong> {prod && <small className="text-muted">{prod.marca}</small>}</td>
-                        <td><span className={`stock-badge ${m.tipo === 'entrada' ? 'stock-ok' : 'stock-zerado'}`}>{m.tipo === 'entrada' ? 'Entrada' : 'Saida'}</span></td>
-                        <td>{m.tipo === 'entrada' ? '+' : '-'}{qtyStr}</td>
+                        <td><span className={`stock-badge ${m.tipo === 'entrada' ? 'stock-ok' : m.tipo === 'ajuste' ? 'stock-baixo' : 'stock-zerado'}`}>{m.tipo === 'entrada' ? 'Entrada' : m.tipo === 'ajuste' ? 'Edicao' : 'Saida'}</span></td>
+                        <td>{(m.tipo === 'ajuste' ? m.quantidade_kg >= 0 : m.tipo === 'entrada') ? '+' : '-'}{qtyStr}</td>
                         <td>{m.motivo}</td>
                       </tr>
                     );

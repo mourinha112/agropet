@@ -186,16 +186,16 @@ export default function Products() {
       const qty = parseInt(stockEntry.quantidade_unidade, 10);
       if (!qty || qty <= 0) { toast.error('Quantidade inválida'); return; }
       try {
-        await api.post(`/products/${showStockModal}/stock-entry`, { quantidade_unidade: qty, motivo: stockEntry.motivo });
+        await api.post(`/products/${showStockModal}/stock-entry`, { quantidade_unidade: qty, motivo: stockEntry.motivo, senha_admin: stockEntry.senha || '' });
         setShowStockModal(null); setStockEntry({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao' }); toast.success('Estoque atualizado!'); loadProducts();
-      } catch (err) { toast.error(err.message); }
+      } catch (err) { toast.error(err.response?.data?.error || err.message); }
     } else {
       const qty = parseFloat(stockEntry.quantidade_kg);
       if (!qty || qty <= 0) { toast.error('Quantidade inválida'); return; }
       try {
-        await api.post(`/products/${showStockModal}/stock-entry`, { quantidade_kg: qty, motivo: stockEntry.motivo });
+        await api.post(`/products/${showStockModal}/stock-entry`, { quantidade_kg: qty, motivo: stockEntry.motivo, senha_admin: stockEntry.senha || '' });
         setShowStockModal(null); setStockEntry({ quantidade_kg: '', quantidade_unidade: '', motivo: 'Reposicao' }); toast.success('Estoque atualizado!'); loadProducts();
-      } catch (err) { toast.error(err.message); }
+      } catch (err) { toast.error(err.response?.data?.error || err.message); }
     }
   }
 
@@ -406,6 +406,7 @@ export default function Products() {
                 <div className="form-group"><label>Quantidade (kg)</label><input type="number" step="0.1" value={stockEntry.quantidade_kg} onChange={e => setStockEntry({ ...stockEntry, quantidade_kg: e.target.value })} required autoFocus /></div>
               )}
               <div className="form-group"><label>Motivo</label><input value={stockEntry.motivo} onChange={e => setStockEntry({ ...stockEntry, motivo: e.target.value })} /></div>
+              <div className="form-group"><label>Senha de admin do estoque</label><input type="password" autoComplete="off" value={stockEntry.senha || ''} onChange={e => setStockEntry({ ...stockEntry, senha: e.target.value })} required /></div>
               <div className="form-actions"><button type="button" className="btn btn-secondary" onClick={() => setShowStockModal(null)}>Cancelar</button><button type="submit" className="btn btn-primary">Confirmar</button></div>
             </form>
           </div>

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { filtrarProdutos } from '../lib/busca';
-import axios from 'axios';
+import api from '../api';
 import {
   Search, X, CreditCard, Banknote, Smartphone, Package, Percent,
   Clock, Printer, ChevronRight, List, Scale, PackageOpen, AlertCircle, CheckCircle,
   Calendar, BarChart3, DollarSign
 } from 'lucide-react';
 
-const API = '/api';
 
 function getDateRange(filter, periodStart, periodEnd) {
   const today = new Date();
@@ -87,14 +86,14 @@ export default function Sales() {
   }
 
   async function loadClients() {
-    try { const res = await axios.get(`${API}/clients`); setClients(res.data); }
+    try { const res = await api.get(`/clients`); setClients(res.data); }
     catch (err) { console.error('Erro ao carregar clientes:', err); }
   }
 
   async function loadTodaySales() {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const res = await axios.get(`${API}/sales?data_inicio=${today}&data_fim=${today}`);
+      const res = await api.get(`/sales?data_inicio=${today}&data_fim=${today}`);
       setTodaySales(res.data || []);
     } catch (err) { console.error('Erro ao carregar vendas:', err); }
   }
@@ -102,13 +101,13 @@ export default function Sales() {
   async function loadHistorySales() {
     try {
       const { start, end } = getDateRange(salesFilter, periodStart, periodEnd);
-      const res = await axios.get(`${API}/sales?data_inicio=${start}&data_fim=${end}`);
+      const res = await api.get(`/sales?data_inicio=${start}&data_fim=${end}`);
       setHistorySales(res.data || []);
     } catch (err) { console.error('Erro ao carregar vendas:', err); setHistorySales([]); }
   }
 
   async function loadSaleDetail(saleId) {
-    try { const res = await axios.get(`${API}/sales/${saleId}`); setSelectedSaleDetail(res.data); }
+    try { const res = await api.get(`/sales/${saleId}`); setSelectedSaleDetail(res.data); }
     catch (err) { console.error('Erro ao carregar detalhe:', err); }
   }
 
@@ -116,7 +115,7 @@ export default function Sales() {
   // de ida ao servidor a cada tecla.
   async function loadAllProducts() {
     try {
-      const res = await axios.get(`${API}/products`);
+      const res = await api.get(`/products`);
       setAllProducts(Array.isArray(res.data) ? res.data : []);
     } catch (err) { setAllProducts([]); }
   }
@@ -134,7 +133,7 @@ export default function Sales() {
     }
 
     try {
-      const res = await axios.get(`${API}/products/search/${encodeURIComponent(term)}`);
+      const res = await api.get(`/products/search/${encodeURIComponent(term)}`);
       setSearchResults(res.data);
     } catch (err) { setSearchResults([]); }
   }
@@ -288,6 +287,10 @@ export default function Sales() {
 
   async function handleFinalizeSale() {
     if (cart.length === 0) return;
+    if (paymentMethod === 'cartao') {
+      showToast('Escolha Débito ou Crédito');
+      return;
+    }
     if (paymentMethod === 'dinheiro' && cashNum > 0 && cashNum < finalTotal) {
       showToast('Valor recebido menor que o total!');
       return;
@@ -302,7 +305,7 @@ export default function Sales() {
         subtotal: itemSubtotal(item),
       }));
 
-      const saleRes = await axios.post(`${API}/sales`, {
+      const saleRes = await api.post(`/sales`, {
         items,
         client_id: selectedClient || null,
         forma_pagamento: paymentMethod,
@@ -415,7 +418,7 @@ export default function Sales() {
     return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
   function formatPayment(p) {
-    const map = { dinheiro: 'Dinheiro', pix: 'PIX', cartao: 'Cartão' };
+    const map = { dinheiro: 'Dinheiro', pix: 'PIX', cartao: 'Cartão', debito: 'Cartão Débito', credito: 'Cartão Crédito' };
     return map[p] || p;
   }
 
@@ -812,10 +815,21 @@ export default function Sales() {
                 <button className={`pdv-payment-option ${paymentMethod === 'pix' ? 'active' : ''}`} onClick={() => setPaymentMethod('pix')}>
                   <Smartphone size={28} /><span>PIX</span>
                 </button>
-                <button className={`pdv-payment-option ${paymentMethod === 'cartao' ? 'active' : ''}`} onClick={() => setPaymentMethod('cartao')}>
-                  <CreditCard size={28} /><span>Cartao</span>
+                <button className={`pdv-payment-option ${['cartao', 'debito', 'credito'].includes(paymentMethod) ? 'active' : ''}`}
+                  onClick={() => { if (!['debito', 'credito'].includes(paymentMethod)) setPaymentMethod('cartao'); }}>
+                  <CreditCard size={28} /><span>Cartão</span>
                 </button>
               </div>
+              {['cartao', 'debito', 'credito'].includes(paymentMethod) && (
+                <div className="pdv-payment-options pdv-card-types">
+                  <button className={`pdv-payment-option ${paymentMethod === 'debito' ? 'active' : ''}`} onClick={() => setPaymentMethod('debito')}>
+                    <span>Débito</span>
+                  </button>
+                  <button className={`pdv-payment-option ${paymentMethod === 'credito' ? 'active' : ''}`} onClick={() => setPaymentMethod('credito')}>
+                    <span>Crédito</span>
+                  </button>
+                </div>
+              )}
             </div>
             {paymentMethod === 'dinheiro' && (
               <div className="pdv-cash-section">

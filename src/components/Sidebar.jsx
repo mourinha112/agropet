@@ -117,7 +117,7 @@ export default function Sidebar({ user, onLogout }) {
             <div className="sidebar-user-avatar"><Person sx={{ fontSize: 18 }} /></div>
             <div className="sidebar-user-text">
               <span className="sidebar-user-name">{user?.nome || 'Usuario'}</span>
-              <span className="sidebar-user-role">{user?.role || 'operador'}</span>
+              <span className="sidebar-user-role">{user?.loja_nome || user?.loja_codigo || user?.role || 'operador'}</span>
             </div>
           </div>
           <button className="sidebar-logout" onClick={() => { closeMobileMenu(); onLogout(); }} title="Sair">

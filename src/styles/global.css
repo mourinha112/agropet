@@ -282,7 +282,7 @@ html, body, #root {
 .pdv-history-item-client { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdv-history-item-pay { font-size: 0.7rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; }
 .pdv-history-item-pay.pix { color: var(--tr-azul); }
-.pdv-history-item-pay.cartao { color: var(--tr-dourado-claro); }
+.pdv-history-item-pay.cartao, .pdv-history-item-pay.debito, .pdv-history-item-pay.credito { color: var(--tr-dourado-claro); }
 .pdv-history-item-right { display: flex; align-items: center; gap: 0.25rem; }
 .pdv-history-item-total { font-size: 0.95rem; font-weight: 700; white-space: nowrap; }
 .pdv-history-detail { border-top: 1px solid var(--tr-borda); padding: 0.85rem 1rem; background: var(--tr-carvao); }
@@ -495,6 +495,8 @@ html, body, #root {
 .pdv-payment-option { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.85rem 0.5rem; border: 2px solid var(--tr-borda); border-radius: 16px; background: var(--tr-superficie-2); cursor: pointer; font-size: 0.82rem; font-weight: 500; color: var(--tr-texto-suave); transition: all 0.15s; }
 .pdv-payment-option:hover { border-color: var(--tr-dourado); color: var(--tr-dourado); }
 .pdv-payment-option.active { border-color: var(--tr-dourado); background: rgba(245,200,66,0.14); color: var(--tr-dourado); font-weight: 700; }
+.pdv-card-types { margin-top: 0.6rem; }
+.pdv-card-types .pdv-payment-option { padding: 0.65rem 0.5rem; font-size: 0.95rem; }
 
 /* Dinheiro/troco */
 .pdv-cash-section { background: var(--tr-superficie-2); border-radius: 16px; padding: 1rem; margin-bottom: 1.25rem; }

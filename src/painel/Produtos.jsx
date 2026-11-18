@@ -223,8 +223,8 @@ export default function Produtos() {
     try {
       await api.post(`/products/${estoqueDe.id}/stock-entry`,
         kg > 0
-          ? { quantidade_kg: kg, motivo: entrada.motivo }
-          : { quantidade_unidade: un, motivo: entrada.motivo });
+          ? { quantidade_kg: kg, motivo: entrada.motivo, senha_admin: entrada.senha || '' }
+          : { quantidade_unidade: un, motivo: entrada.motivo, senha_admin: entrada.senha || '' });
       aviso.sucesso('Estoque atualizado');
       setEstoqueDe(null);
       setEntrada({ kg: '', un: '', motivo: 'Reposição' });
@@ -562,6 +562,11 @@ export default function Produtos() {
             <label className="pn-campo">
               <span>Motivo</span>
               <input value={entrada.motivo} onChange={(e) => setEntrada({ ...entrada, motivo: e.target.value })} />
+            </label>
+            <label className="pn-campo">
+              <span>Senha de admin do estoque</span>
+              <input type="password" autoComplete="off" required value={entrada.senha || ''}
+                onChange={(e) => setEntrada({ ...entrada, senha: e.target.value })} />
             </label>
             <div className="pn-modal-acoes">
               <button type="button" className="pn-btn pn-btn-claro" onClick={() => setEstoqueDe(null)}>Cancelar</button>

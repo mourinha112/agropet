@@ -326,7 +326,7 @@ export default function Orders() {
 
               <label className="ped-rotulo">Forma de pagamento</label>
               <div className="ped-pagamentos">
-                {[['dinheiro', 'Dinheiro'], ['pix', 'PIX'], ['cartao', 'Cartão']].map(([v, l]) => (
+                {[['dinheiro', 'Dinheiro'], ['pix', 'PIX'], ['debito', 'Débito'], ['credito', 'Crédito']].map(([v, l]) => (
                   <button
                     key={v}
                     className={`pdv-filter-btn ${pagamento === v ? 'active' : ''}`}

@@ -136,7 +136,7 @@ export default function Cashier() {
 
   function payIcon(p) {
     if (p === 'pix') return <Smartphone size={16} />;
-    if (p === 'cartao') return <CreditCard size={16} />;
+    if (p === 'cartao' || p === 'debito' || p === 'credito') return <CreditCard size={16} />;
     return <Banknote size={16} />;
   }
 
@@ -272,7 +272,7 @@ export default function Cashier() {
                       (cashier.por_pagamento || []).map(p => (
                         <div key={p.forma_pagamento} className="cx-pay-row">
                           <div className="cx-pay-icon">{payIcon(p.forma_pagamento)}</div>
-                          <span className="cx-pay-name capitalize">{p.forma_pagamento}</span>
+                          <span className="cx-pay-name capitalize">{({ debito: "Cartão débito", credito: "Cartão crédito", cartao: "Cartão" })[p.forma_pagamento] || p.forma_pagamento}</span>
                           <span className="cx-pay-value">R$ {safe(p.total)}</span>
                         </div>
                       ))
@@ -388,7 +388,7 @@ export default function Cashier() {
                     {(selectedHistory.por_pagamento || []).map(p => (
                       <div key={p.forma_pagamento} className="cx-pay-row">
                         <div className="cx-pay-icon">{payIcon(p.forma_pagamento)}</div>
-                        <span className="cx-pay-name capitalize">{p.forma_pagamento}</span>
+                        <span className="cx-pay-name capitalize">{({ debito: "Cartão débito", credito: "Cartão crédito", cartao: "Cartão" })[p.forma_pagamento] || p.forma_pagamento}</span>
                         <span className="cx-pay-value">R$ {safe(p.total)}</span>
                       </div>
                     ))}

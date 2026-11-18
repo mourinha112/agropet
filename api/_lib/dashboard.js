@@ -53,7 +53,9 @@ export function dashboardVazio() {
   };
 }
 
-export async function montarDashboard(supabase) {
+// lojaId: loja de quem esta logado. estoqueLoja: Map product_id -> estoque
+// daquela loja (null = loja principal, que usa as colunas de products).
+export async function montarDashboard(supabase, lojaId = 1, estoqueLoja = null) {
   const hoje = diaLocal();
   const ontem = somarDias(hoje, -1);
   const mesInicio = `${hoje.slice(0, 7)}-01`;
@@ -69,21 +71,25 @@ export async function montarDashboard(supabase) {
     { data: caixaRows },
     { count: totalClientes },
   ] = await Promise.all([
-    supabase.from('sales').select('id, total, forma_pagamento, created_at, client_id')
+    supabase.from('sales').select('id, total, forma_pagamento, created_at, client_id').eq('loja_id', lojaId)
       .gte('created_at', inicioDoDia(inicioBusca)).order('created_at', { ascending: true }),
     supabase.from('products')
       .select('id, nome, marca, categoria, estoque_kg, estoque_unidade, estoque_minimo_dias, estoque_minimo_unidade, preco_por_kg, preco_unitario, custo_unitario, custo_por_kg, custo_saco, peso_saco_kg')
       .eq('ativo', 1),
     supabase.from('settings').select('value').eq('key', 'meta_diaria').maybeSingle(),
-    supabase.from('sales').select('id, total, forma_pagamento, created_at, clients(nome)')
+    supabase.from('sales').select('id, total, forma_pagamento, created_at, clients(nome)').eq('loja_id', lojaId)
       .order('created_at', { ascending: false }).limit(6),
-    supabase.from('cash_sessions').select('id, saldo_inicial, opened_at').eq('status', 'aberto')
+    supabase.from('cash_sessions').select('id, saldo_inicial, opened_at').eq('status', 'aberto').eq('loja_id', lojaId)
       .order('opened_at', { ascending: false }).limit(1),
-    supabase.from('clients').select('id', { count: 'exact', head: true }),
+    supabase.from('clients').select('id', { count: 'exact', head: true }).eq('loja_id', lojaId),
   ]);
 
   const vendas = (vendasBrutas || []).map((v) => ({ ...v, dia: diaLocal(new Date(v.created_at)) }));
-  const prods = produtosBrutos || [];
+  const prods = (produtosBrutos || []).map((p) => {
+    if (!estoqueLoja) return p;
+    const e = estoqueLoja.get(Number(p.id));
+    return { ...p, estoque_kg: num(e?.estoque_kg), estoque_unidade: num(e?.estoque_unidade) };
+  });
   const porId = new Map(prods.map((p) => [p.id, p]));
 
   // Itens de todas as vendas do periodo (mes + 30 dias), uma consulta so.
@@ -219,6 +225,7 @@ export async function montarDashboard(supabase) {
     const limite = somarDias(hoje, 7);
     const { data: abertas } = await supabase.from('expenses')
       .select('id, descricao, valor, data_vencimento, pago, recorrente')
+      .eq('loja_id', lojaId)
       .or('pago.eq.0,pago.is.null');
     const lista = abertas || [];
     despesasPendentes = lista
@@ -236,7 +243,7 @@ export async function montarDashboard(supabase) {
 
   // ------------------------------------------------------------ pedidos online
   let pedidosNovos = 0;
-  try {
+  if (lojaId === 1) try {
     const { count } = await supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'novo');
     pedidosNovos = count || 0;
   } catch (_) { /* loja online nao instalada */ }

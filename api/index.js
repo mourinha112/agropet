@@ -18,6 +18,116 @@ try {
 
 const hashPassword = (password) => crypto.createHash('sha256').update(String(password)).digest('hex');
 
+// Senha de admin do estoque: fixa e separada do login (sha256 em hex).
+// Para trocar, gere o sha256 da nova senha e substitua o valor abaixo.
+const SENHA_ESTOQUE_HASH = '73be71ef8d286b976622eace0b5df0a44eebe024062033596b6c943c9eca3d2f';
+
+// Devolve null se a senha confere; senao { status, error } para responder.
+function conferirSenhaEstoque(senha) {
+  if (!senha || hashPassword(senha) !== SENHA_ESTOQUE_HASH) return { status: 403, error: 'Senha de admin do estoque incorreta.' };
+  return null;
+}
+
+// ---------------------------------------------------------------------
+// Sessao: o token diz quem entrou e de qual loja. E assinado (HMAC), entao
+// o navegador nao consegue trocar de loja mexendo no token.
+// Para uma chave so do servidor, cadastre AUTH_SECRET na Vercel.
+// ---------------------------------------------------------------------
+const AUTH_SECRET = process.env.AUTH_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey || 'agropet';
+const SESSAO_DIAS = 30;
+
+const assinar = (texto) => crypto.createHmac('sha256', AUTH_SECRET).update(texto).digest('base64url');
+
+function criarToken(user) {
+  const dados = Buffer.from(JSON.stringify({
+    u: user.id,
+    l: Number(user.loja_id) || 1,
+    e: Date.now() + SESSAO_DIAS * 24 * 60 * 60 * 1000,
+  })).toString('base64url');
+  return `${dados}.${assinar(dados)}`;
+}
+
+function lerToken(req) {
+  const h = (req.headers && (req.headers.authorization || req.headers.Authorization)) || '';
+  const token = String(h).replace(/^Bearer\s+/i, '').trim();
+  const [dados, assinatura] = token.split('.');
+  if (!dados || !assinatura) return null;
+  const esperado = assinar(dados);
+  if (esperado.length !== assinatura.length
+    || !crypto.timingSafeEqual(Buffer.from(esperado), Buffer.from(assinatura))) return null;
+  try {
+    const s = JSON.parse(Buffer.from(dados, 'base64url').toString('utf8'));
+    if (!s.u || !s.l || !s.e || s.e < Date.now()) return null;
+    return s;
+  } catch (_) { return null; }
+}
+
+async function usuarioComLoja(u) {
+  const lojaId = Number(u.loja_id) || 1;
+  let loja = null;
+  try {
+    const { data } = await supabase.from('lojas').select('id, codigo, nome').eq('id', lojaId).maybeSingle();
+    loja = data;
+  } catch (_) { /* tabela lojas ainda nao criada */ }
+  return {
+    id: u.id, nome: u.nome, login: u.login, role: u.role,
+    loja_id: lojaId,
+    loja_codigo: loja?.codigo || '',
+    loja_nome: loja?.nome || '',
+  };
+}
+
+// ---------------------------------------------------------------------
+// Estoque por loja. A loja 1 usa as colunas da tabela products (e o que a
+// loja online mostra); as demais usam a tabela estoque_loja.
+// ---------------------------------------------------------------------
+const LOJA_PRINCIPAL = 1;
+
+async function mapaEstoqueLoja(lojaId) {
+  if (lojaId === LOJA_PRINCIPAL) return null;
+  const { data, error } = await supabase
+    .from('estoque_loja')
+    .select('product_id, estoque_kg, estoque_unidade')
+    .eq('loja_id', lojaId)
+    .range(0, 9999);
+  if (error) throw error;
+  return new Map((data || []).map((r) => [Number(r.product_id), r]));
+}
+
+// Troca estoque_kg / estoque_unidade dos produtos pelo estoque da loja
+function comEstoqueDaLoja(produtos, mapa) {
+  if (!mapa) return produtos;
+  return (produtos || []).map((p) => {
+    const e = mapa.get(Number(p.id));
+    return { ...p, estoque_kg: Number(e?.estoque_kg) || 0, estoque_unidade: Number(e?.estoque_unidade) || 0 };
+  });
+}
+
+async function lerEstoque(lojaId, productId) {
+  if (lojaId === LOJA_PRINCIPAL) {
+    const { data } = await supabase.from('products').select('estoque_kg, estoque_unidade').eq('id', productId).maybeSingle();
+    return { estoque_kg: Number(data?.estoque_kg) || 0, estoque_unidade: Number(data?.estoque_unidade) || 0 };
+  }
+  const { data } = await supabase.from('estoque_loja').select('estoque_kg, estoque_unidade')
+    .eq('loja_id', lojaId).eq('product_id', productId).maybeSingle();
+  return { estoque_kg: Number(data?.estoque_kg) || 0, estoque_unidade: Number(data?.estoque_unidade) || 0 };
+}
+
+// campos: { estoque_kg } e/ou { estoque_unidade }
+async function gravarEstoque(lojaId, productId, campos) {
+  if (lojaId === LOJA_PRINCIPAL) {
+    const { error } = await supabase.from('products').update(campos).eq('id', productId);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase.from('estoque_loja').upsert(
+    { product_id: Number(productId), loja_id: lojaId, ...campos, updated_at: new Date().toISOString() },
+    { onConflict: 'product_id,loja_id' });
+  if (error) throw error;
+}
+
+const lerBody = (req) => (typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}));
+
 function safePath(rawUrl) {
   const urlOnly = (rawUrl || '').split('?')[0].trim() || '';
   if (urlOnly.startsWith('http')) {
@@ -58,8 +168,8 @@ export default async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   if (method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -73,7 +183,7 @@ export default async function handler(req, res) {
       return res.status(200).json(emptyDashboard());
     }
     // Auth check
-    if (url === '/api/auth/check' || url === '/api/auth') {
+    if (url === '/api/auth/check' || (url === '/api/auth' && method === 'GET')) {
       try {
         const { data, error } = await supabase.from('users').select('id').limit(1);
         if (error) {
@@ -87,63 +197,62 @@ export default async function handler(req, res) {
     }
     
     // Auth login/register
-    if (url.includes('/auth/login') || url.includes('/auth/setup')) {
+    if (url === '/api/auth' || url.includes('/auth/login') || url.includes('/auth/setup')) {
       if (method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
       }
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { action, login, senha, nome } = body;
-      
+      const body = lerBody(req);
+      const { action, senha, nome } = body;
+      const login = String(body.login || '').trim();
+
       if (action === 'login') {
         const { data, error } = await supabase
           .from('users')
           .select('*')
           .eq('login', login)
-          .eq('senha_hash', hashPassword(senha))
+          .eq('senha_hash', hashPassword(senha || ''))
           .single();
 
         if (error || !data) {
           return res.status(401).json({ error: 'Login ou senha incorretos' });
         }
 
-        const token = Buffer.from(`${data.id}:${Date.now()}`).toString('base64');
-        return res.json({
-          token,
-          user: { id: data.id, nome: data.nome, login: data.login, role: data.role }
-        });
+        return res.json({ token: criarToken(data), user: await usuarioComLoja(data) });
       }
 
       if (action === 'register') {
-        const { data: existing } = await supabase
-          .from('users')
-          .select('id')
-          .eq('login', login)
-          .single();
-
-        if (existing) {
-          return res.status(400).json({ error: 'Login já existe' });
+        // So vale para o primeiro acesso, com o banco sem nenhum usuario.
+        const { data: algum } = await supabase.from('users').select('id').limit(1);
+        if (algum && algum.length > 0) {
+          return res.status(403).json({ error: 'Cadastro de usuario fechado. Peca o login ao administrador.' });
         }
 
         const { data: newUser, error } = await supabase
           .from('users')
-          .insert([{ nome: nome || login, login, senha_hash: hashPassword(senha), role: 'admin' }])
+          .insert([{ nome: nome || login, login, senha_hash: hashPassword(senha || ''), role: 'admin' }])
           .select()
           .single();
 
         if (error) throw error;
 
-        const token = Buffer.from(`${newUser.id}:${Date.now()}`).toString('base64');
-        return res.json({
-          token,
-          user: { id: newUser.id, nome: newUser.nome, login: newUser.login, role: newUser.role }
-        });
+        return res.json({ token: criarToken(newUser), user: await usuarioComLoja(newUser) });
       }
+
+      return res.status(400).json({ error: 'Acao invalida' });
     }
+
+    // Daqui para baixo: loja online (/api/shop) e aberta; o resto exige login.
+    const sessao = lerToken(req);
+    if (!url.startsWith('/api/shop/') && !sessao) {
+      return res.status(401).json({ error: 'Sessao expirada. Entre de novo.', sessao: true });
+    }
+    const lojaId = Number(sessao?.l) || LOJA_PRINCIPAL;
+    const ehPrincipal = lojaId === LOJA_PRINCIPAL;
 
     // Dashboard (logica em api/_lib/dashboard.js)
     if (url === '/api/dashboard' && method === 'GET') {
       try {
-        return res.status(200).json(await montarDashboard(supabase));
+        return res.status(200).json(await montarDashboard(supabase, lojaId, await mapaEstoqueLoja(lojaId)));
       } catch (e) {
         console.error('Dashboard error:', e);
         return res.status(200).json(emptyDashboard());
@@ -172,6 +281,7 @@ export default async function handler(req, res) {
         } else {
           products = dataFull || [];
         }
+        products = comEstoqueDaLoja(products, await mapaEstoqueLoja(lojaId));
 
         const last30Days = new Date();
         last30Days.setDate(last30Days.getDate() - 30);
@@ -180,6 +290,7 @@ export default async function handler(req, res) {
         const { data: salesList } = await supabase
           .from('sales')
           .select('id')
+          .eq('loja_id', lojaId)
           .gte('created_at', since);
 
         const saleIds = (salesList || []).map(s => s.id);
@@ -232,7 +343,7 @@ export default async function handler(req, res) {
           console.error('Products list error:', error);
           return res.status(500).json({ error: 'Erro ao buscar produtos' });
         }
-        return res.json(data || []);
+        return res.json(comEstoqueDaLoja(data || [], await mapaEstoqueLoja(lojaId)));
       } catch (err) {
         console.error('Products error:', err);
         return res.status(500).json({ error: err.message });
@@ -272,21 +383,46 @@ export default async function handler(req, res) {
         return termos.every((t) => alvo.includes(t));
       });
 
-      return res.json(achados.slice(0, 25));
+      return res.json(comEstoqueDaLoja(achados.slice(0, 25), await mapaEstoqueLoja(lojaId)));
     }
 
-    // Products - create
+    // Products - movimentacoes de estoque da loja
+    if (url === '/api/products/movements' && method === 'GET') {
+      let qs = {};
+      try { if (rawUrl.includes('?')) qs = Object.fromEntries(new URLSearchParams(rawUrl.split('?')[1])); } catch (_) {}
+      const limite = Math.min(1000, Math.max(1, parseInt(qs.limit, 10) || 200));
+      let q = supabase
+        .from('stock_movements')
+        .select('*, products(nome)')
+        .eq('loja_id', lojaId)
+        .order('created_at', { ascending: false })
+        .limit(limite);
+      if (qs.product_id) q = q.eq('product_id', qs.product_id);
+      const { data, error } = await q;
+      if (error) throw error;
+      return res.json(data || []);
+    }
+
+    // Products - create (o estoque inicial vai para a loja de quem cadastrou)
     if (url === '/api/products' && method === 'POST') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const body = { ...lerBody(req) };
+      const inicial = { estoque_kg: Number(body.estoque_kg) || 0, estoque_unidade: parseInt(body.estoque_unidade, 10) || 0 };
+      if (!ehPrincipal) { body.estoque_kg = 0; body.estoque_unidade = 0; }
       const { data, error } = await supabase.from('products').insert([body]).select();
       if (error) throw error;
-      return res.status(201).json(data[0]);
+      if (!ehPrincipal && (inicial.estoque_kg > 0 || inicial.estoque_unidade > 0)) {
+        await gravarEstoque(lojaId, data[0].id, inicial);
+      }
+      return res.status(201).json(comEstoqueDaLoja([data[0]], ehPrincipal ? null : new Map([[Number(data[0].id), inicial]]))[0]);
     }
 
     // Products - update
     if (url.includes('/products/') && method === 'PUT') {
       const id = url.split('/products/')[1];
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const body = { ...(typeof req.body === 'string' ? JSON.parse(req.body) : req.body) };
+      // Estoque so muda por entrada/edicao (com senha de admin) ou por venda.
+      delete body.estoque_kg;
+      delete body.estoque_unidade;
       const { data, error } = await supabase
         .from('products')
         .update({ ...body, updated_at: new Date().toISOString() })
@@ -312,25 +448,55 @@ export default async function handler(req, res) {
       try {
         const id = url.replace(/^\/api\/products\//, '').replace(/\/stock-entry$/, '');
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-        const { data: product, error: getErr } = await supabase.from('products').select('categoria, estoque_kg, estoque_unidade').eq('id', id).single();
+        const negado = await conferirSenhaEstoque(body.senha_admin);
+        if (negado) return res.status(negado.status).json({ error: negado.error });
+        const { data: product, error: getErr } = await supabase.from('products').select('categoria').eq('id', id).single();
         if (getErr || !product) return res.status(404).json({ error: 'Produto não encontrado' });
+        const estoque = await lerEstoque(lojaId, id);
         const isUnit = product.categoria && product.categoria !== 'racao';
         if (isUnit && (body.quantidade_unidade != null)) {
           const qty = parseInt(body.quantidade_unidade, 10) || 0;
           if (qty <= 0) return res.status(400).json({ error: 'Quantidade inválida' });
-          const newUn = (product.estoque_unidade || 0) + qty;
-          await supabase.from('products').update({ estoque_unidade: newUn }).eq('id', id);
-          await supabase.from('stock_movements').insert([{ product_id: id, tipo: 'entrada', quantidade_kg: qty, motivo: body.motivo || 'Entrada manual' }]);
+          const newUn = estoque.estoque_unidade + qty;
+          await gravarEstoque(lojaId, id, { estoque_unidade: newUn });
+          await supabase.from('stock_movements').insert([{ product_id: id, loja_id: lojaId, tipo: 'entrada', quantidade_kg: qty, motivo: body.motivo || 'Entrada manual' }]);
           return res.json({ success: true, estoque_unidade: newUn });
         }
         const qtyKg = parseFloat(body.quantidade_kg) || 0;
         if (qtyKg <= 0) return res.status(400).json({ error: 'Quantidade inválida' });
-        const newKg = (product.estoque_kg || 0) + qtyKg;
-        await supabase.from('products').update({ estoque_kg: newKg }).eq('id', id);
-        await supabase.from('stock_movements').insert([{ product_id: id, tipo: 'entrada', quantidade_kg: qtyKg, motivo: body.motivo || 'Entrada manual' }]);
+        const newKg = estoque.estoque_kg + qtyKg;
+        await gravarEstoque(lojaId, id, { estoque_kg: newKg });
+        await supabase.from('stock_movements').insert([{ product_id: id, loja_id: lojaId, tipo: 'entrada', quantidade_kg: qtyKg, motivo: body.motivo || 'Entrada manual' }]);
         return res.json({ success: true, estoque_kg: newKg });
       } catch (err) {
         console.error('Stock entry error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
+    // Products - editar estoque (define o valor exato; exige senha de admin)
+    if (url.match(/^\/api\/products\/\d+\/stock-adjust$/) && method === 'POST') {
+      try {
+        const id = url.replace(/^\/api\/products\//, '').replace(/\/stock-adjust$/, '');
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const negado = await conferirSenhaEstoque(body.senha_admin);
+        if (negado) return res.status(negado.status).json({ error: negado.error });
+        const { data: product, error: getErr } = await supabase.from('products').select('categoria').eq('id', id).single();
+        if (getErr || !product) return res.status(404).json({ error: 'Produto não encontrado' });
+        const estoque = await lerEstoque(lojaId, id);
+        const isUnit = product.categoria && product.categoria !== 'racao';
+        const novo = isUnit ? parseInt(body.estoque, 10) : Math.round(parseFloat(body.estoque) * 1000) / 1000;
+        if (!Number.isFinite(novo) || novo < 0) return res.status(400).json({ error: 'Quantidade inválida' });
+        const atual = isUnit ? estoque.estoque_unidade : estoque.estoque_kg;
+        const diff = Math.round((novo - atual) * 1000) / 1000;
+        if (diff === 0) return res.json({ success: true, semMudanca: true });
+        const campo = isUnit ? 'estoque_unidade' : 'estoque_kg';
+        await gravarEstoque(lojaId, id, { [campo]: novo });
+        const motivo = String(body.motivo || 'Ajuste manual').slice(0, 200);
+        await supabase.from('stock_movements').insert([{ product_id: id, loja_id: lojaId, tipo: 'ajuste', quantidade_kg: diff, motivo: `${motivo} (de ${atual} para ${novo})` }]);
+        return res.json({ success: true, [campo]: novo });
+      } catch (err) {
+        console.error('Stock adjust error:', err);
         return res.status(500).json({ error: err.message });
       }
     }
@@ -349,6 +515,7 @@ export default async function handler(req, res) {
         const { data, error } = await supabase
           .from('sales')
           .select('*, clients(nome)')
+          .eq('loja_id', lojaId)
           .gte('created_at', dataInicio)
           .lte('created_at', dataFim + 'T23:59:59.999Z')
           .order('created_at', { ascending: false });
@@ -367,7 +534,7 @@ export default async function handler(req, res) {
     if (url.match(/^\/api\/sales\/\d+$/) && method === 'GET') {
       try {
         const id = url.replace(/^\/api\/sales\//, '');
-        const { data: sale, error: e1 } = await supabase.from('sales').select('*, clients(nome)').eq('id', id).single();
+        const { data: sale, error: e1 } = await supabase.from('sales').select('*, clients(nome)').eq('id', id).eq('loja_id', lojaId).single();
         if (e1 || !sale) return res.status(404).json({ error: 'Venda não encontrada' });
         const { data: items, error: e2 } = await supabase.from('sale_items').select('*, products(nome)').eq('sale_id', id);
         if (e2) throw e2;
@@ -388,11 +555,13 @@ export default async function handler(req, res) {
 
     // Sales - create
     if (url === '/api/sales' && method === 'POST') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { items, ...saleData } = body;
+      const body = lerBody(req);
+      const { items: itensBody, ...saleData } = body;
+      const items = Array.isArray(itensBody) ? itensBody : [];
+      saleData.loja_id = lojaId;
 
       // Garantir que total existe - calcular dos itens se não enviado
-      if (!saleData.total && items && items.length > 0) {
+      if (!saleData.total && items.length > 0) {
         const subtotalItens = items.reduce((sum, it) => sum + (it.subtotal || 0), 0);
         saleData.total = subtotalItens - (saleData.desconto || 0);
       }
@@ -406,7 +575,8 @@ export default async function handler(req, res) {
       const saleId = newSale[0].id;
 
       for (const item of items) {
-        const { data: prod } = await supabase.from('products').select('categoria, preco_por_kg, preco_saco_fechado, peso_saco_kg, preco_unitario, estoque_kg, estoque_unidade').eq('id', item.product_id).single();
+        const { data: prodBase } = await supabase.from('products').select('categoria, preco_por_kg, preco_saco_fechado, peso_saco_kg, preco_unitario').eq('id', item.product_id).single();
+        const prod = prodBase ? { ...prodBase, ...(await lerEstoque(lojaId, item.product_id)) } : null;
         const isUnit = prod && prod.categoria && prod.categoria !== 'racao';
         let precoUnit = item.preco_unitario;
         let subtotal = item.subtotal;
@@ -436,23 +606,39 @@ export default async function handler(req, res) {
         if (isUnit) {
           const un = Math.round(item.quantidade_kg || 0);
           const newUn = Math.max(0, (prod.estoque_unidade || 0) - un);
-          await supabase.from('products').update({ estoque_unidade: newUn }).eq('id', item.product_id);
-          await supabase.from('stock_movements').insert([{ product_id: item.product_id, tipo: 'saida', quantidade_kg: -un, motivo: `Venda #${saleId}`, sale_id: saleId }]);
-        } else {
+          await gravarEstoque(lojaId, item.product_id, { estoque_unidade: newUn });
+          await supabase.from('stock_movements').insert([{ product_id: item.product_id, loja_id: lojaId, tipo: 'saida', quantidade_kg: -un, motivo: `Venda #${saleId}`, sale_id: saleId }]);
+        } else if (prod) {
           const newKg = Math.max(0, (prod.estoque_kg || 0) - qtyKg);
-          await supabase.from('products').update({ estoque_kg: newKg }).eq('id', item.product_id);
-          await supabase.from('stock_movements').insert([{ product_id: item.product_id, tipo: 'saida', quantidade_kg: -qtyKg, motivo: `Venda #${saleId}`, sale_id: saleId }]);
+          await gravarEstoque(lojaId, item.product_id, { estoque_kg: newKg });
+          await supabase.from('stock_movements').insert([{ product_id: item.product_id, loja_id: lojaId, tipo: 'saida', quantidade_kg: -qtyKg, motivo: `Venda #${saleId}`, sale_id: saleId }]);
         }
       }
 
       return res.status(201).json(newSale[0]);
     }
 
+    // Clients - editar / apagar (so da propria loja)
+    if (url.match(/^\/api\/clients\/\d+$/) && (method === 'PUT' || method === 'DELETE')) {
+      const id = url.replace(/^\/api\/clients\//, '');
+      if (method === 'DELETE') {
+        const { error } = await supabase.from('clients').delete().eq('id', id).eq('loja_id', lojaId);
+        if (error) throw error;
+        return res.json({ success: true });
+      }
+      const body = { ...lerBody(req) };
+      delete body.id; delete body.loja_id; delete body.created_at;
+      const { data, error } = await supabase.from('clients').update(body).eq('id', id).eq('loja_id', lojaId).select();
+      if (error) throw error;
+      if (!data || data.length === 0) return res.status(404).json({ error: 'Cliente nao encontrado' });
+      return res.json(data[0]);
+    }
+
     // Clients
     if (url === '/api/clients') {
       try {
         if (method === 'GET') {
-          const { data, error } = await supabase.from('clients').select('*').order('nome');
+          const { data, error } = await supabase.from('clients').select('*').eq('loja_id', lojaId).order('nome');
           if (error) {
             console.error('Clients list error:', error);
             return res.status(500).json({ error: 'Erro ao buscar clientes' });
@@ -460,7 +646,8 @@ export default async function handler(req, res) {
           return res.json(data || []);
         }
         if (method === 'POST') {
-          const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+          const body = { ...lerBody(req), loja_id: lojaId };
+          delete body.id;
           const { data, error } = await supabase.from('clients').insert([body]).select();
           if (error) {
             console.error('Clients insert error:', error);
@@ -485,8 +672,8 @@ export default async function handler(req, res) {
         const mesFim = new Date(y, m, 0).toISOString().split('T')[0];
         let noMes = [];
         let rec = [];
-        try { const { data } = await supabase.from('expenses').select('id, valor, pago, categoria').gte('data_vencimento', mesInicio).lte('data_vencimento', mesFim); noMes = data || []; } catch (_) {}
-        try { const { data } = await supabase.from('expenses').select('id, valor, pago, categoria').or('recorrente.eq.1,recorrente.is.true'); rec = data || []; } catch (_) {}
+        try { const { data } = await supabase.from('expenses').select('id, valor, pago, categoria').eq('loja_id', lojaId).gte('data_vencimento', mesInicio).lte('data_vencimento', mesFim); noMes = data || []; } catch (_) {}
+        try { const { data } = await supabase.from('expenses').select('id, valor, pago, categoria').eq('loja_id', lojaId).or('recorrente.eq.1,recorrente.is.true'); rec = data || []; } catch (_) {}
         const seen = new Set(noMes.map(e => e.id));
         const recUniq = rec.filter(e => !seen.has(e.id) && seen.add(e.id));
         const items = [...noMes, ...recUniq];
@@ -515,8 +702,8 @@ export default async function handler(req, res) {
           const mesFim = new Date(y, m, 0).toISOString().split('T')[0];
           let noMes = [];
           let rec = [];
-          try { const { data } = await supabase.from('expenses').select('*').gte('data_vencimento', mesInicio).lte('data_vencimento', mesFim).order('data_vencimento', { ascending: true }); noMes = data || []; } catch (_) {}
-          try { const { data } = await supabase.from('expenses').select('*').or('recorrente.eq.1,recorrente.is.true').order('data_vencimento', { ascending: true }); rec = data || []; } catch (_) {}
+          try { const { data } = await supabase.from('expenses').select('*').eq('loja_id', lojaId).gte('data_vencimento', mesInicio).lte('data_vencimento', mesFim).order('data_vencimento', { ascending: true }); noMes = data || []; } catch (_) {}
+          try { const { data } = await supabase.from('expenses').select('*').eq('loja_id', lojaId).or('recorrente.eq.1,recorrente.is.true').order('data_vencimento', { ascending: true }); rec = data || []; } catch (_) {}
           const seen = new Set(noMes.map(e => e.id));
           const noMesDesc = new Set(noMes.map(e => `${e.descricao}|${e.categoria || ''}`));
           const recUniq = rec.filter(e => {
@@ -551,6 +738,7 @@ export default async function handler(req, res) {
           row.data_vencimento = (body.data_vencimento && body.data_vencimento !== '')
             ? body.data_vencimento
             : new Date().toISOString().slice(0, 7) + '-01';
+          row.loja_id = lojaId;
           const { data, error } = await supabase.from('expenses').insert([row]).select();
           if (error) console.error('Expenses insert error:', error);
           return res.status(201).json(data?.[0] || {});
@@ -567,17 +755,17 @@ export default async function handler(req, res) {
         const id = url.replace(/^\/api\/expenses\//, '').replace(/\/toggle-pago$/, '');
         const qs = rawUrl.includes('?') ? new URLSearchParams(rawUrl.split('?')[1]) : null;
         const mesParam = qs && qs.get('mes');
-        const { data: expense, error: getErr } = await supabase.from('expenses').select('*').eq('id', id).single();
+        const { data: expense, error: getErr } = await supabase.from('expenses').select('*').eq('loja_id', lojaId).eq('id', id).single();
         if (getErr || !expense) return res.status(404).json({ error: 'Despesa não encontrada' });
         const expMes = expense.data_vencimento ? expense.data_vencimento.slice(0, 7) : '';
         const isRec = expense.recorrente === 1 || expense.recorrente === true;
         const mes = mesParam || expMes || new Date().toISOString().slice(0, 7);
         if (isRec && expMes !== mes) {
           const mesInicio = mes + '-01';
-          const { data: existing } = await supabase.from('expenses').select('id, pago').eq('descricao', expense.descricao).eq('categoria', expense.categoria || 'outros').eq('data_vencimento', mesInicio).maybeSingle();
+          const { data: existing } = await supabase.from('expenses').select('id, pago').eq('loja_id', lojaId).eq('descricao', expense.descricao).eq('categoria', expense.categoria || 'outros').eq('data_vencimento', mesInicio).maybeSingle();
           if (existing) {
             const novoPago = existing.pago ? 0 : 1;
-            const { data: updated } = await supabase.from('expenses').update({ pago: novoPago, data_pagamento: novoPago ? new Date().toISOString().split('T')[0] : null }).eq('id', existing.id).select().single();
+            const { data: updated } = await supabase.from('expenses').update({ pago: novoPago, data_pagamento: novoPago ? new Date().toISOString().split('T')[0] : null }).eq('loja_id', lojaId).eq('id', existing.id).select().single();
             return res.json(updated);
           }
           const { data: newRow, error: insErr } = await supabase.from('expenses').insert([{
@@ -588,13 +776,14 @@ export default async function handler(req, res) {
             pago: 1,
             data_pagamento: new Date().toISOString().split('T')[0],
             recorrente: 0,
+            loja_id: lojaId,
             tipo_recorrencia: expense.tipo_recorrencia || 'nenhum',
           }]).select().single();
           if (insErr) throw insErr;
           return res.json(newRow);
         }
         const novoPago = expense.pago ? 0 : 1;
-        const { data, error } = await supabase.from('expenses').update({ pago: novoPago, data_pagamento: novoPago ? new Date().toISOString().split('T')[0] : null }).eq('id', id).select().single();
+        const { data, error } = await supabase.from('expenses').update({ pago: novoPago, data_pagamento: novoPago ? new Date().toISOString().split('T')[0] : null }).eq('loja_id', lojaId).eq('id', id).select().single();
         if (error) throw error;
         return res.json(data);
       } catch (err) {
@@ -607,7 +796,7 @@ export default async function handler(req, res) {
     if (url.match(/^\/api\/expenses\/\d+$/) && method === 'DELETE') {
       try {
         const id = url.replace(/^\/api\/expenses\//, '');
-        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        const { error } = await supabase.from('expenses').delete().eq('loja_id', lojaId).eq('id', id);
         if (error) throw error;
         return res.json({ success: true });
       } catch (err) {
@@ -621,7 +810,7 @@ export default async function handler(req, res) {
       try {
         const { data: session, error } = await supabase
           .from('cash_sessions')
-          .select('*')
+          .select('*').eq('loja_id', lojaId)
           .eq('status', 'aberto')
           .order('opened_at', { ascending: false })
           .limit(1)
@@ -644,7 +833,7 @@ export default async function handler(req, res) {
         const openedAt = session.opened_at;
         const { data: sessionSales } = await supabase
           .from('sales')
-          .select('total, forma_pagamento')
+          .select('total, forma_pagamento').eq('loja_id', lojaId)
           .gte('created_at', openedAt);
         const salesList = sessionSales || [];
         const totalVendas = salesList.reduce((s, v) => s + (Number(v.total) || 0), 0);
@@ -687,7 +876,7 @@ export default async function handler(req, res) {
       
       const { data: existing } = await supabase
         .from('cash_sessions')
-        .select('id')
+        .select('id').eq('loja_id', lojaId)
         .eq('status', 'aberto')
         .single();
       
@@ -697,7 +886,7 @@ export default async function handler(req, res) {
       
       const { data, error } = await supabase
         .from('cash_sessions')
-        .insert([{ saldo_inicial: saldo_inicial || 0, status: 'aberto' }])
+        .insert([{ saldo_inicial: saldo_inicial || 0, status: 'aberto', loja_id: lojaId }])
         .select()
         .single();
       
@@ -721,7 +910,7 @@ export default async function handler(req, res) {
         
         const { data: openSession, error: findErr } = await supabase
           .from('cash_sessions')
-          .select('*')
+          .select('*').eq('loja_id', lojaId)
           .eq('status', 'aberto')
           .single();
         if (findErr || !openSession) {
@@ -734,7 +923,7 @@ export default async function handler(req, res) {
           .eq('session_id', sessionId);
         const salesRes = await supabase
           .from('sales')
-          .select('total')
+          .select('total').eq('loja_id', lojaId)
           .gte('created_at', openSession.opened_at);
         const totalVendas = (salesRes.data || []).reduce((s, v) => s + (Number(v.total) || 0), 0);
         const suprimentos = (movs || []).filter(m => m.tipo === 'suprimento').reduce((s, m) => s + (Number(m.valor) || 0), 0);
@@ -750,7 +939,7 @@ export default async function handler(req, res) {
         
         const { data, error } = await supabase
           .from('cash_sessions')
-          .update({ status: 'fechado', saldo_final: saldoFinal, observacao_fechamento: observacao || '', closed_at: new Date().toISOString() })
+          .update({ status: 'fechado', saldo_final: saldoFinal, observacao_fechamento: observacao || '', closed_at: new Date().toISOString() }).eq('loja_id', lojaId)
           .eq('id', sessionId)
           .select()
           .single();
@@ -766,7 +955,9 @@ export default async function handler(req, res) {
     if (url === '/api/cashier/movement' && method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const { session_id, tipo, valor, descricao } = body;
-      
+      const { data: daLoja } = await supabase.from('cash_sessions').select('id').eq('id', session_id).eq('loja_id', lojaId).maybeSingle();
+      if (!daLoja) return res.status(404).json({ error: 'Caixa nao encontrado' });
+
       const { data, error } = await supabase
         .from('cash_movements')
         .insert([{ session_id, tipo, valor, descricao }])
@@ -782,7 +973,7 @@ export default async function handler(req, res) {
       try {
         const { data: sessions, error } = await supabase
           .from('cash_sessions')
-          .select('*')
+          .select('*').eq('loja_id', lojaId)
           .eq('status', 'fechado')
           .order('closed_at', { ascending: false })
           .limit(20);
@@ -791,7 +982,7 @@ export default async function handler(req, res) {
         const withTotals = await Promise.all(list.map(async (s) => {
           const { data: sales } = await supabase
             .from('sales')
-            .select('total')
+            .select('total').eq('loja_id', lojaId)
             .gte('created_at', s.opened_at)
             .lte('created_at', (s.closed_at || new Date().toISOString()));
           const total = (sales || []).reduce((a, v) => a + (Number(v.total) || 0), 0);
@@ -810,7 +1001,7 @@ export default async function handler(req, res) {
         const id = url.replace(/^\/api\/cashier\//, '');
         const { data: session, error: sessErr } = await supabase
           .from('cash_sessions')
-          .select('*')
+          .select('*').eq('loja_id', lojaId)
           .eq('id', id)
           .single();
         if (sessErr || !session) return res.status(404).json({ error: 'Sessão não encontrada' });
@@ -822,7 +1013,7 @@ export default async function handler(req, res) {
         const movs = movements || [];
         const { data: sessionSales } = await supabase
           .from('sales')
-          .select('total, forma_pagamento')
+          .select('total, forma_pagamento').eq('loja_id', lojaId)
           .gte('created_at', session.opened_at)
           .lte('created_at', (session.closed_at || new Date().toISOString()));
         const salesList = sessionSales || [];
@@ -855,7 +1046,7 @@ export default async function handler(req, res) {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         const { data: openSession, error: findErr } = await supabase
           .from('cash_sessions')
-          .select('id')
+          .select('id').eq('loja_id', lojaId)
           .eq('status', 'aberto')
           .single();
         if (findErr || !openSession) {
@@ -881,7 +1072,7 @@ export default async function handler(req, res) {
     if (url === '/api/cashier/reset' && method === 'POST') {
       await supabase
         .from('cash_sessions')
-        .update({ status: 'fechado', closed_at: new Date().toISOString() })
+        .update({ status: 'fechado', closed_at: new Date().toISOString() }).eq('loja_id', lojaId)
         .eq('status', 'aberto');
 
       return res.json({ success: true });
@@ -891,19 +1082,21 @@ export default async function handler(req, res) {
 
     // Custos fixos (alias /api/costs -> fixed_costs)
     if (url === '/api/costs' && method === 'GET') {
-      const { data, error } = await supabase.from('fixed_costs').select('*').order('id');
+      const { data, error } = await supabase.from('fixed_costs').select('*').eq('loja_id', lojaId).order('id');
       if (error) throw error;
       return res.json(data || []);
     }
     if (url === '/api/costs' && method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      delete body.id;
+      body.loja_id = lojaId;
       const { data, error } = await supabase.from('fixed_costs').insert([body]).select();
       if (error) throw error;
       return res.status(201).json(data[0]);
     }
     if (url.startsWith('/api/costs/') && method === 'DELETE') {
       const id = url.split('/api/costs/')[1];
-      const { error } = await supabase.from('fixed_costs').delete().eq('id', id);
+      const { error } = await supabase.from('fixed_costs').delete().eq('loja_id', lojaId).eq('id', id);
       if (error) throw error;
       return res.json({ success: true });
     }
@@ -920,7 +1113,7 @@ export default async function handler(req, res) {
 
         const { data: sales } = await supabase
           .from('sales')
-          .select('id, total, forma_pagamento, created_at')
+          .select('id, total, forma_pagamento, created_at').eq('loja_id', lojaId)
           .gte('created_at', mesInicio)
           .lte('created_at', mesFim + 'T23:59:59');
 
@@ -953,12 +1146,12 @@ export default async function handler(req, res) {
 
         const lucro_bruto = faturamento_mes - custo_produtos;
 
-        const { data: fixedCosts } = await supabase.from('fixed_costs').select('valor');
+        const { data: fixedCosts } = await supabase.from('fixed_costs').select('valor').eq('loja_id', lojaId);
         const custos_fixos = (fixedCosts || []).reduce((s, c) => s + (Number(c.valor) || 0), 0);
 
         const { data: expensesData } = await supabase
           .from('expenses')
-          .select('valor, pago, categoria')
+          .select('valor, pago, categoria').eq('loja_id', lojaId)
           .gte('data_vencimento', mesInicio)
           .lte('data_vencimento', mesFim);
         const despesas_mes = (expensesData || []).reduce((s, e) => s + (Number(e.valor) || 0), 0);
@@ -1056,7 +1249,7 @@ export default async function handler(req, res) {
 
         const { data: sales } = await supabase
           .from('sales')
-          .select('id, total, created_at')
+          .select('id, total, created_at').eq('loja_id', lojaId)
           .gte('created_at', inicio)
           .order('created_at', { ascending: true });
 
@@ -1096,7 +1289,7 @@ export default async function handler(req, res) {
 
         const { data: sales } = await supabase
           .from('sales')
-          .select('id, total, created_at')
+          .select('id, total, created_at').eq('loja_id', lojaId)
           .gte('created_at', inicio)
           .order('created_at', { ascending: true });
 
@@ -1135,7 +1328,7 @@ export default async function handler(req, res) {
 
         const { data, error } = await supabase
           .from('sales')
-          .select('*, clients(nome), sale_items(*, products(nome, categoria))')
+          .select('*, clients(nome), sale_items(*, products(nome, categoria))').eq('loja_id', lojaId)
           .gte('created_at', mesInicio)
           .lte('created_at', mesFim + 'T23:59:59')
           .order('created_at', { ascending: false });
@@ -1161,7 +1354,7 @@ export default async function handler(req, res) {
 
       const { data: vendas, error: e1 } = await supabase
         .from('sales')
-        .select('id, created_at, total')
+        .select('id, created_at, total').eq('loja_id', lojaId)
         .gte('created_at', inicio)
         .limit(5000);
       if (e1) throw e1;
@@ -1190,7 +1383,7 @@ export default async function handler(req, res) {
       if (e3) throw e3;
 
       const porId = {};
-      for (const p of produtos || []) porId[p.id] = p;
+      for (const p of comEstoqueDaLoja(produtos || [], await mapaEstoqueLoja(lojaId))) porId[p.id] = p;
 
       // Quando os campos da loja nao foram preenchidos, cai no "tipo" que o
       // PDV ja usa desde sempre.
@@ -1692,6 +1885,7 @@ export default async function handler(req, res) {
         .from('clients')
         .select('id')
         .eq('whatsapp', whatsapp)
+        .eq('loja_id', LOJA_PRINCIPAL)
         .limit(1);
 
       if (achado && achado.length > 0) {
@@ -1740,8 +1934,13 @@ export default async function handler(req, res) {
     }
 
     // ==================================================================
-    // PEDIDOS (lado do PDV)
+    // PEDIDOS (lado do PDV) - a loja online e da loja principal
     // ==================================================================
+    if (url.startsWith('/api/orders') && !ehPrincipal) {
+      if (url === '/api/orders' && method === 'GET') return res.json([]);
+      return res.status(403).json({ error: 'Os pedidos da loja online ficam com a loja 01ST.' });
+    }
+
     if (url === '/api/orders' && method === 'GET') {
       let query = {};
       try {
@@ -1809,7 +2008,7 @@ export default async function handler(req, res) {
       // Contagens de apoio do painel da loja. `head: true` traz so o total,
       // sem puxar as linhas.
       const [{ count: clientes }, { count: produtos }] = await Promise.all([
-        supabase.from('clients').select('id', { count: 'exact', head: true }),
+        supabase.from('clients').select('id', { count: 'exact', head: true }).eq('loja_id', LOJA_PRINCIPAL),
         supabase.from('products').select('id', { count: 'exact', head: true })
           .eq('ativo', 1).eq('visivel_loja', true),
       ]);
@@ -1856,7 +2055,7 @@ export default async function handler(req, res) {
     if (url.match(/^\/api\/orders\/\d+\/confirm$/) && method === 'POST') {
       const id = url.match(/^\/api\/orders\/(\d+)\/confirm$/)[1];
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-      const formaPagamento = ['dinheiro', 'pix', 'cartao'].includes(body.forma_pagamento)
+      const formaPagamento = ['dinheiro', 'pix', 'cartao', 'debito', 'credito'].includes(body.forma_pagamento)
         ? body.forma_pagamento : 'pix';
 
       const { data: pedido, error: e1 } = await supabase
@@ -1881,6 +2080,7 @@ export default async function handler(req, res) {
           total: pedido.subtotal,
           desconto: 0,
           forma_pagamento: formaPagamento,
+          loja_id: LOJA_PRINCIPAL,
         }])
         .select();
 

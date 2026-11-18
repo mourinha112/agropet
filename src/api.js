@@ -15,5 +15,21 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+// Sessao vencida (ou token antigo, de antes das lojas separadas): limpa e
+// volta para a tela de login.
+api.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401 && err.response?.data?.sessao) {
+      try {
+        localStorage.removeItem('petshop_token');
+        localStorage.removeItem('petshop_user');
+      } catch (_) { /* sem localStorage */ }
+      window.location.reload();
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default api;
 export { API_BASE };
