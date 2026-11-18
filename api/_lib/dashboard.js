@@ -53,9 +53,8 @@ export function dashboardVazio() {
   };
 }
 
-// lojaId: loja de quem esta logado. estoqueLoja: Map product_id -> estoque
-// daquela loja (null = loja principal, que usa as colunas de products).
-export async function montarDashboard(supabase, lojaId = 1, estoqueLoja = null) {
+// lojaId: loja de quem esta logado (cada loja tem os proprios produtos).
+export async function montarDashboard(supabase, lojaId = 1) {
   const hoje = diaLocal();
   const ontem = somarDias(hoje, -1);
   const mesInicio = `${hoje.slice(0, 7)}-01`;
@@ -75,6 +74,7 @@ export async function montarDashboard(supabase, lojaId = 1, estoqueLoja = null) 
       .gte('created_at', inicioDoDia(inicioBusca)).order('created_at', { ascending: true }),
     supabase.from('products')
       .select('id, nome, marca, categoria, estoque_kg, estoque_unidade, estoque_minimo_dias, estoque_minimo_unidade, preco_por_kg, preco_unitario, custo_unitario, custo_por_kg, custo_saco, peso_saco_kg')
+      .eq('loja_id', lojaId)
       .eq('ativo', 1),
     supabase.from('settings').select('value').eq('key', 'meta_diaria').maybeSingle(),
     supabase.from('sales').select('id, total, forma_pagamento, created_at, clients(nome)').eq('loja_id', lojaId)
@@ -85,11 +85,7 @@ export async function montarDashboard(supabase, lojaId = 1, estoqueLoja = null) 
   ]);
 
   const vendas = (vendasBrutas || []).map((v) => ({ ...v, dia: diaLocal(new Date(v.created_at)) }));
-  const prods = (produtosBrutos || []).map((p) => {
-    if (!estoqueLoja) return p;
-    const e = estoqueLoja.get(Number(p.id));
-    return { ...p, estoque_kg: num(e?.estoque_kg), estoque_unidade: num(e?.estoque_unidade) };
-  });
+  const prods = produtosBrutos || [];
   const porId = new Map(prods.map((p) => [p.id, p]));
 
   // Itens de todas as vendas do periodo (mes + 30 dias), uma consulta so.

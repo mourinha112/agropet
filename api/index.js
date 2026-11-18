@@ -78,51 +78,14 @@ async function usuarioComLoja(u) {
 }
 
 // ---------------------------------------------------------------------
-// Estoque por loja. A loja 1 usa as colunas da tabela products (e o que a
-// loja online mostra); as demais usam a tabela estoque_loja.
+// Produtos por loja: cada loja tem as proprias linhas em products (preco,
+// cadastro e estoque). A loja online usa os produtos da loja principal.
 // ---------------------------------------------------------------------
 const LOJA_PRINCIPAL = 1;
 
-async function mapaEstoqueLoja(lojaId) {
-  if (lojaId === LOJA_PRINCIPAL) return null;
-  const { data, error } = await supabase
-    .from('estoque_loja')
-    .select('product_id, estoque_kg, estoque_unidade')
-    .eq('loja_id', lojaId)
-    .range(0, 9999);
-  if (error) throw error;
-  return new Map((data || []).map((r) => [Number(r.product_id), r]));
-}
-
-// Troca estoque_kg / estoque_unidade dos produtos pelo estoque da loja
-function comEstoqueDaLoja(produtos, mapa) {
-  if (!mapa) return produtos;
-  return (produtos || []).map((p) => {
-    const e = mapa.get(Number(p.id));
-    return { ...p, estoque_kg: Number(e?.estoque_kg) || 0, estoque_unidade: Number(e?.estoque_unidade) || 0 };
-  });
-}
-
-async function lerEstoque(lojaId, productId) {
-  if (lojaId === LOJA_PRINCIPAL) {
-    const { data } = await supabase.from('products').select('estoque_kg, estoque_unidade').eq('id', productId).maybeSingle();
-    return { estoque_kg: Number(data?.estoque_kg) || 0, estoque_unidade: Number(data?.estoque_unidade) || 0 };
-  }
-  const { data } = await supabase.from('estoque_loja').select('estoque_kg, estoque_unidade')
-    .eq('loja_id', lojaId).eq('product_id', productId).maybeSingle();
-  return { estoque_kg: Number(data?.estoque_kg) || 0, estoque_unidade: Number(data?.estoque_unidade) || 0 };
-}
-
 // campos: { estoque_kg } e/ou { estoque_unidade }
 async function gravarEstoque(lojaId, productId, campos) {
-  if (lojaId === LOJA_PRINCIPAL) {
-    const { error } = await supabase.from('products').update(campos).eq('id', productId);
-    if (error) throw error;
-    return;
-  }
-  const { error } = await supabase.from('estoque_loja').upsert(
-    { product_id: Number(productId), loja_id: lojaId, ...campos, updated_at: new Date().toISOString() },
-    { onConflict: 'product_id,loja_id' });
+  const { error } = await supabase.from('products').update(campos).eq('id', productId).eq('loja_id', lojaId);
   if (error) throw error;
 }
 
@@ -252,7 +215,7 @@ export default async function handler(req, res) {
     // Dashboard (logica em api/_lib/dashboard.js)
     if (url === '/api/dashboard' && method === 'GET') {
       try {
-        return res.status(200).json(await montarDashboard(supabase, lojaId, await mapaEstoqueLoja(lojaId)));
+        return res.status(200).json(await montarDashboard(supabase, lojaId));
       } catch (e) {
         console.error('Dashboard error:', e);
         return res.status(200).json(emptyDashboard());
@@ -266,12 +229,14 @@ export default async function handler(req, res) {
         const { data: dataFull, error: prodErr } = await supabase
           .from('products')
           .select('id, nome, marca, estoque_kg, estoque_minimo_dias, categoria, estoque_unidade, estoque_minimo_unidade')
+          .eq('loja_id', lojaId)
           .eq('ativo', 1);
 
         if (prodErr) {
           const { data: dataMin, error: minErr } = await supabase
             .from('products')
             .select('id, nome, estoque_kg')
+            .eq('loja_id', lojaId)
             .eq('ativo', 1);
           if (minErr) {
             console.error('Dashboard alerts products error:', prodErr);
@@ -281,7 +246,6 @@ export default async function handler(req, res) {
         } else {
           products = dataFull || [];
         }
-        products = comEstoqueDaLoja(products, await mapaEstoqueLoja(lojaId));
 
         const last30Days = new Date();
         last30Days.setDate(last30Days.getDate() - 30);
@@ -336,6 +300,7 @@ export default async function handler(req, res) {
         const { data, error } = await supabase
           .from('products')
           .select('*')
+          .eq('loja_id', lojaId)
           .eq('ativo', 1)
           .order('nome');
         
@@ -343,7 +308,7 @@ export default async function handler(req, res) {
           console.error('Products list error:', error);
           return res.status(500).json({ error: 'Erro ao buscar produtos' });
         }
-        return res.json(comEstoqueDaLoja(data || [], await mapaEstoqueLoja(lojaId)));
+        return res.json(data || []);
       } catch (err) {
         console.error('Products error:', err);
         return res.status(500).json({ error: err.message });
@@ -372,6 +337,7 @@ export default async function handler(req, res) {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('loja_id', lojaId)
         .eq('ativo', 1)
         .or(`nome.ilike.%${primeira}%,marca.ilike.%${primeira}%`)
         .limit(200);
@@ -383,7 +349,7 @@ export default async function handler(req, res) {
         return termos.every((t) => alvo.includes(t));
       });
 
-      return res.json(comEstoqueDaLoja(achados.slice(0, 25), await mapaEstoqueLoja(lojaId)));
+      return res.json(achados.slice(0, 25));
     }
 
     // Products - movimentacoes de estoque da loja
@@ -403,17 +369,13 @@ export default async function handler(req, res) {
       return res.json(data || []);
     }
 
-    // Products - create (o estoque inicial vai para a loja de quem cadastrou)
+    // Products - create (o produto e da loja de quem cadastrou)
     if (url === '/api/products' && method === 'POST') {
-      const body = { ...lerBody(req) };
-      const inicial = { estoque_kg: Number(body.estoque_kg) || 0, estoque_unidade: parseInt(body.estoque_unidade, 10) || 0 };
-      if (!ehPrincipal) { body.estoque_kg = 0; body.estoque_unidade = 0; }
+      const body = { ...lerBody(req), loja_id: lojaId };
+      delete body.id; delete body.origem_id;
       const { data, error } = await supabase.from('products').insert([body]).select();
       if (error) throw error;
-      if (!ehPrincipal && (inicial.estoque_kg > 0 || inicial.estoque_unidade > 0)) {
-        await gravarEstoque(lojaId, data[0].id, inicial);
-      }
-      return res.status(201).json(comEstoqueDaLoja([data[0]], ehPrincipal ? null : new Map([[Number(data[0].id), inicial]]))[0]);
+      return res.status(201).json(data[0]);
     }
 
     // Products - update
@@ -423,12 +385,15 @@ export default async function handler(req, res) {
       // Estoque so muda por entrada/edicao (com senha de admin) ou por venda.
       delete body.estoque_kg;
       delete body.estoque_unidade;
+      delete body.id; delete body.loja_id; delete body.origem_id;
       const { data, error } = await supabase
         .from('products')
         .update({ ...body, updated_at: new Date().toISOString() })
         .eq('id', id)
+        .eq('loja_id', lojaId)
         .select();
       if (error) throw error;
+      if (!data || data.length === 0) return res.status(404).json({ error: 'Produto nao encontrado nesta loja' });
       return res.json(data[0]);
     }
 
@@ -438,7 +403,8 @@ export default async function handler(req, res) {
       const { error } = await supabase
         .from('products')
         .update({ ativo: 0 })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('loja_id', lojaId);
       if (error) throw error;
       return res.json({ success: true });
     }
@@ -450,9 +416,9 @@ export default async function handler(req, res) {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         const negado = await conferirSenhaEstoque(body.senha_admin);
         if (negado) return res.status(negado.status).json({ error: negado.error });
-        const { data: product, error: getErr } = await supabase.from('products').select('categoria').eq('id', id).single();
+        const { data: product, error: getErr } = await supabase.from('products').select('categoria, estoque_kg, estoque_unidade').eq('id', id).eq('loja_id', lojaId).single();
         if (getErr || !product) return res.status(404).json({ error: 'Produto não encontrado' });
-        const estoque = await lerEstoque(lojaId, id);
+        const estoque = { estoque_kg: Number(product.estoque_kg) || 0, estoque_unidade: Number(product.estoque_unidade) || 0 };
         const isUnit = product.categoria && product.categoria !== 'racao';
         if (isUnit && (body.quantidade_unidade != null)) {
           const qty = parseInt(body.quantidade_unidade, 10) || 0;
@@ -481,9 +447,9 @@ export default async function handler(req, res) {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         const negado = await conferirSenhaEstoque(body.senha_admin);
         if (negado) return res.status(negado.status).json({ error: negado.error });
-        const { data: product, error: getErr } = await supabase.from('products').select('categoria').eq('id', id).single();
+        const { data: product, error: getErr } = await supabase.from('products').select('categoria, estoque_kg, estoque_unidade').eq('id', id).eq('loja_id', lojaId).single();
         if (getErr || !product) return res.status(404).json({ error: 'Produto não encontrado' });
-        const estoque = await lerEstoque(lojaId, id);
+        const estoque = { estoque_kg: Number(product.estoque_kg) || 0, estoque_unidade: Number(product.estoque_unidade) || 0 };
         const isUnit = product.categoria && product.categoria !== 'racao';
         const novo = isUnit ? parseInt(body.estoque, 10) : Math.round(parseFloat(body.estoque) * 1000) / 1000;
         if (!Number.isFinite(novo) || novo < 0) return res.status(400).json({ error: 'Quantidade inválida' });
@@ -560,6 +526,19 @@ export default async function handler(req, res) {
       const items = Array.isArray(itensBody) ? itensBody : [];
       saleData.loja_id = lojaId;
 
+      // Todos os produtos da venda precisam ser desta loja
+      const idsVenda = [...new Set(items.map(it => Number(it.product_id)).filter(Boolean))];
+      const { data: prodsVenda, error: prodsErr } = idsVenda.length
+        ? await supabase.from('products')
+          .select('id, categoria, preco_por_kg, preco_saco_fechado, peso_saco_kg, preco_unitario, estoque_kg, estoque_unidade')
+          .in('id', idsVenda).eq('loja_id', lojaId)
+        : { data: [] };
+      if (prodsErr) throw prodsErr;
+      const prodPorId = new Map((prodsVenda || []).map(p => [Number(p.id), p]));
+      if (prodPorId.size !== idsVenda.length) {
+        return res.status(409).json({ error: 'Um dos produtos do carrinho nao e desta loja. Remova e adicione de novo.' });
+      }
+
       // Garantir que total existe - calcular dos itens se não enviado
       if (!saleData.total && items.length > 0) {
         const subtotalItens = items.reduce((sum, it) => sum + (it.subtotal || 0), 0);
@@ -575,8 +554,7 @@ export default async function handler(req, res) {
       const saleId = newSale[0].id;
 
       for (const item of items) {
-        const { data: prodBase } = await supabase.from('products').select('categoria, preco_por_kg, preco_saco_fechado, peso_saco_kg, preco_unitario').eq('id', item.product_id).single();
-        const prod = prodBase ? { ...prodBase, ...(await lerEstoque(lojaId, item.product_id)) } : null;
+        const prod = prodPorId.get(Number(item.product_id)) || null;
         const isUnit = prod && prod.categoria && prod.categoria !== 'racao';
         let precoUnit = item.preco_unitario;
         let subtotal = item.subtotal;
@@ -607,10 +585,12 @@ export default async function handler(req, res) {
           const un = Math.round(item.quantidade_kg || 0);
           const newUn = Math.max(0, (prod.estoque_unidade || 0) - un);
           await gravarEstoque(lojaId, item.product_id, { estoque_unidade: newUn });
+          prod.estoque_unidade = newUn; // mesmo produto em duas linhas
           await supabase.from('stock_movements').insert([{ product_id: item.product_id, loja_id: lojaId, tipo: 'saida', quantidade_kg: -un, motivo: `Venda #${saleId}`, sale_id: saleId }]);
         } else if (prod) {
           const newKg = Math.max(0, (prod.estoque_kg || 0) - qtyKg);
           await gravarEstoque(lojaId, item.product_id, { estoque_kg: newKg });
+          prod.estoque_kg = newKg;
           await supabase.from('stock_movements').insert([{ product_id: item.product_id, loja_id: lojaId, tipo: 'saida', quantidade_kg: -qtyKg, motivo: `Venda #${saleId}`, sale_id: saleId }]);
         }
       }
@@ -1124,7 +1104,7 @@ export default async function handler(req, res) {
         const { data: products } = await supabase
           .from('products')
           .select('id, nome, categoria, custo_por_kg, custo_saco, peso_saco_kg, custo_unitario')
-          .eq('ativo', 1);
+          .eq('loja_id', lojaId);
 
         const isRacao = (p) => !p.categoria || p.categoria === 'racao';
         let custo_produtos = 0;
@@ -1379,11 +1359,12 @@ export default async function handler(req, res) {
       const { data: produtos, error: e3 } = await supabase
         .from('products')
         .select('id, nome, marca, tipo, categoria, especie, porte, perfil, peso_saco_kg, estoque_kg, estoque_unidade')
-        .limit(3000);
+        .eq('loja_id', lojaId)
+        .limit(5000);
       if (e3) throw e3;
 
       const porId = {};
-      for (const p of comEstoqueDaLoja(produtos || [], await mapaEstoqueLoja(lojaId))) porId[p.id] = p;
+      for (const p of produtos || []) porId[p.id] = p;
 
       // Quando os campos da loja nao foram preenchidos, cai no "tipo" que o
       // PDV ja usa desde sempre.
@@ -1498,6 +1479,7 @@ export default async function handler(req, res) {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('loja_id', LOJA_PRINCIPAL)
         .eq('ativo', 1)
         .order('nome');
       if (error) throw error;
@@ -1681,6 +1663,7 @@ export default async function handler(req, res) {
       const { data: vendas } = await supabase
         .from('sales')
         .select('id')
+        .eq('loja_id', LOJA_PRINCIPAL)
         .gte('created_at', desde)
         .limit(2000);
 
@@ -1793,7 +1776,7 @@ export default async function handler(req, res) {
           .eq('id', item.product_id)
           .single();
 
-        if (!prod || prod.ativo !== 1 || prod.visivel_loja !== true) {
+        if (!prod || prod.ativo !== 1 || prod.visivel_loja !== true || Number(prod.loja_id || 1) !== LOJA_PRINCIPAL) {
           return res.status(409).json({ error: 'Um dos produtos saiu do catalogo. Revise o carrinho.' });
         }
 
@@ -2010,7 +1993,7 @@ export default async function handler(req, res) {
       const [{ count: clientes }, { count: produtos }] = await Promise.all([
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('loja_id', LOJA_PRINCIPAL),
         supabase.from('products').select('id', { count: 'exact', head: true })
-          .eq('ativo', 1).eq('visivel_loja', true),
+          .eq('loja_id', LOJA_PRINCIPAL).eq('ativo', 1).eq('visivel_loja', true),
       ]);
 
       return res.json({
